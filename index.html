@@ -1,321 +1,709 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Circle IO v5 FIX</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Circle IO v7</title>
 <style>
-body{
-margin:0;
-overflow:hidden;
-background:#0b0b12;
-font-family:system-ui;
-color:white;
-}
+  :root{
+    --bg:#0b0b12;
+    --panel:rgba(255,255,255,.06);
+    --panel2:rgba(255,255,255,.09);
+    --text:#fff;
+    --muted:rgba(255,255,255,.68);
+    --accent:#ff8a3d;
+  }
 
-#ui{
-position:fixed;
-top:10px;
-left:10px;
-z-index:10;
-background:rgba(255,255,255,0.06);
-padding:10px;
-border-radius:12px;
-backdrop-filter:blur(10px);
-}
+  *{
+    box-sizing:border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select:none;
+  }
 
-#bar{
-width:200px;
-height:10px;
-background:#222;
-border-radius:10px;
-overflow:hidden;
-margin-top:5px;
-}
+  html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:var(--bg);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    color:var(--text);
+  }
 
-#fill{
-height:100%;
-width:10%;
-background:#ff8a3d;
-}
+  canvas{ display:block; }
 
-#joyBase{
-position:fixed;
-bottom:30px;
-left:30px;
-width:100px;
-height:100px;
-background:rgba(255,255,255,0.05);
-border-radius:50%;
-}
+  #ui{
+    position:fixed;
+    top:10px;
+    left:10px;
+    z-index:20;
+    min-width:220px;
+    padding:12px 12px 10px;
+    border-radius:14px;
+    background:var(--panel);
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 12px 35px rgba(0,0,0,.28);
+  }
 
-#joyStick{
-position:absolute;
-top:35px;
-left:35px;
-width:30px;
-height:30px;
-background:#ff8a3d;
-border-radius:50%;
-}
+  #ui b{
+    display:block;
+    margin-bottom:6px;
+    font-size:14px;
+    letter-spacing:.02em;
+  }
 
-canvas{display:block;}
+  .stat-row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    color:var(--muted);
+    font-size:13px;
+    margin-top:2px;
+  }
+
+  #barWrap{
+    width:100%;
+    height:10px;
+    border-radius:999px;
+    background:#1d1d27;
+    overflow:hidden;
+    margin-top:8px;
+  }
+
+  #fill{
+    width:12%;
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg, #ffb36b, var(--accent));
+    box-shadow:0 0 18px rgba(255,138,61,.35);
+  }
+
+  #joyBase{
+    position:fixed;
+    left:50%;
+    bottom:20px;
+    transform:translateX(-50%);
+    width:118px;
+    height:118px;
+    border-radius:50%;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    display:none;
+    z-index:30;
+    touch-action:none;
+    backdrop-filter:blur(8px);
+  }
+
+  #joyStick{
+    position:absolute;
+    left:44px;
+    top:44px;
+    width:30px;
+    height:30px;
+    border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 8px 22px rgba(255,138,61,.35);
+    transform:translate(0,0);
+  }
+
+  @media (pointer: coarse){
+    #joyBase{ display:block; }
+  }
+
+  @media (pointer: fine){
+    #joyBase{ display:none !important; }
+  }
 </style>
 </head>
-
 <body>
+  <div id="ui">
+    <b>Circle IO</b>
+    <div class="stat-row"><span>Level</span><span id="levelText">1</span></div>
+    <div class="stat-row"><span>Size</span><span id="sizeText">10</span></div>
+    <div id="barWrap"><div id="fill"></div></div>
+  </div>
 
-<div id="ui">
-<b>Circle IO v5</b><br>
-Size: <span id="size">10</span>
-<div id="bar"><div id="fill"></div></div>
-</div>
+  <div id="joyBase" aria-hidden="true">
+    <div id="joyStick"></div>
+  </div>
 
-<div id="joyBase">
-<div id="joyStick"></div>
-</div>
+  <canvas id="game"></canvas>
 
-<canvas id="game"></canvas>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
 
-<script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+    const uiLevel = document.getElementById('levelText');
+    const uiSize = document.getElementById('sizeText');
+    const uiFill = document.getElementById('fill');
 
-canvas.width=innerWidth;
-canvas.height=innerHeight;
+    const joyBase = document.getElementById('joyBase');
+    const joyStick = document.getElementById('joyStick');
 
-/* CAMERA */
-let cam={x:0,y:0,zoom:1};
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
-/* PLAYER */
-let player={x:0,y:0,r:10,speed:4};
+    const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (!isTouch) joyBase.style.display = 'none';
 
-/* 🍽️ FOOD (MORE DROPLETS) */
-let food=[];
-for(let i=0;i<450;i++) spawnFood();
+    const WORLD = {
+      chunkSize: 700,
+      loadRadius: 3,
+      keepRadius: 5
+    };
 
-function spawnFood(big=false){
-food.push({
-x:(Math.random()-0.5)*2500,
-y:(Math.random()-0.5)*2500,
-r: big ? Math.random()*12+8 : Math.random()*4+2,
-color: big ? "#ffd36b" : `hsl(${Math.random()*360},80%,60%)`,
-big: big
-});
-}
+    const player = {
+      x: 0,
+      y: 0,
+      r: 10,
+      speed: 4
+    };
 
-/* 💎 BIG DROPLETS SPAWN */
-setInterval(()=>{
-spawnFood(true);
-}, 1200);
+    const cam = {
+      x: 0,
+      y: 0,
+      zoom: 1
+    };
 
-/* 🤖 BOTS (FIXED SPAWN RANGE) */
-let bots=[];
-for(let i=0;i<18;i++) spawnBot();
+    let level = 1;
+    let levelStart = 10;
+    let nextLevel = 24;
 
-function spawnBot(){
-bots.push({
-x:(Math.random()-0.5)*1200,
-y:(Math.random()-0.5)*1200,
-r:Math.random()*80+8,   // FIXED NORMAL RANGE
-vx:0,vy:0
-});
-}
+    let keys = Object.create(null);
 
-/* INPUT */
-let keys={};
-document.addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
-document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+    const joy = {
+      x: 0,
+      y: 0,
+      active: false
+    };
 
-/* JOYSTICK */
-let joy={x:0,y:0,active:false};
+    let foods = [];
+    let bots = [];
+    let effects = [];
+    const chunkFoods = new Map();
 
-const stick=document.getElementById("joyStick");
-const base=document.getElementById("joyBase");
+    function rand(min, max) {
+      return Math.random() * (max - min) + min;
+    }
 
-base.addEventListener("touchstart",()=>joy.active=true);
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
 
-base.addEventListener("touchmove",e=>{
-let t=e.touches[0];
-let rect=base.getBoundingClientRect();
+    function dist(ax, ay, bx, by) {
+      const dx = ax - bx;
+      const dy = ay - by;
+      return Math.hypot(dx, dy);
+    }
 
-let dx=t.clientX-(rect.left+50);
-let dy=t.clientY-(rect.top+50);
+    function chunkKey(cx, cy) {
+      return cx + ',' + cy;
+    }
 
-let len=Math.sqrt(dx*dx+dy*dy);
-if(len>40){
-dx=dx/len*40;
-dy=dy/len*40;
-}
+    function currentChunk() {
+      return {
+        cx: Math.floor(player.x / WORLD.chunkSize),
+        cy: Math.floor(player.y / WORLD.chunkSize)
+      };
+    }
 
-joy.x=dx/40;
-joy.y=dy/40;
+    function computeNextLevelThreshold(current) {
+      return Math.floor(current * 1.38 + 10);
+    }
 
-stick.style.transform=`translate(${dx}px,${dy}px)`;
-});
+    function updateLevelSystem() {
+      while (player.r >= nextLevel) {
+        level++;
+        levelStart = nextLevel;
+        nextLevel = computeNextLevelThreshold(nextLevel);
+        updateBotTargetCount();
+      }
+    }
 
-base.addEventListener("touchend",()=>{
-joy.active=false;
-joy.x=0;joy.y=0;
-stick.style.transform="translate(0px,0px)";
-});
+    function levelProgress() {
+      const range = Math.max(1, nextLevel - levelStart);
+      return clamp((player.r - levelStart) / range, 0, 1);
+    }
 
-/* MOVE */
-function move(){
-if(keys["w"]) player.y-=player.speed;
-if(keys["s"]) player.y+=player.speed;
-if(keys["a"]) player.x-=player.speed;
-if(keys["d"]) player.x+=player.speed;
+    let targetBotCount = 18;
+    function updateBotTargetCount() {
+      targetBotCount = clamp(18 + Math.floor(level * 1.6), 18, 70);
+    }
+    updateBotTargetCount();
 
-if(joy.active){
-player.x+=joy.x*player.speed*2;
-player.y+=joy.y*player.speed*2;
-}
-}
+    function spawnBurst(x, y, count, baseColor, power = 1) {
+      for (let i = 0; i < count; i++) {
+        effects.push({
+          x,
+          y,
+          vx: rand(-2.8, 2.8) * power,
+          vy: rand(-2.8, 2.8) * power,
+          r: rand(2, 5) * power,
+          life: rand(18, 28),
+          color: baseColor,
+          ring: false
+        });
+      }
 
-/* 🤖 FIXED AI */
-function botAI(b){
-let dx=player.x-b.x;
-let dy=player.y-b.y;
-let dist=Math.sqrt(dx*dx+dy*dy)+0.001;
+      effects.push({
+        x,
+        y,
+        vx: 0,
+        vy: 0,
+        r: 2,
+        life: 16,
+        color: baseColor,
+        ring: true,
+        maxR: 26 * power
+      });
+    }
 
-/* correct logic */
-if(b.r > player.r){
-b.vx -= dx/dist*0.5;
-b.vy -= dy/dist*0.5;
-}else{
-b.vx += dx/dist*0.35;
-b.vy += dy/dist*0.35;
-}
+    function deleteFoodAt(index) {
+      const f = foods[index];
+      if (!f) return;
 
-b.vx*=0.92;
-b.vy*=0.92;
+      const arr = chunkFoods.get(f.chunkKey);
+      if (arr) {
+        const j = arr.indexOf(f);
+        if (j >= 0) arr.splice(j, 1);
+        if (arr.length === 0) chunkFoods.delete(f.chunkKey);
+      }
 
-b.x+=b.vx;
-b.y+=b.vy;
-}
+      foods.splice(index, 1);
+    }
 
-/* COLLISION */
-function collide(){
+    function generateChunk(cx, cy) {
+      const key = chunkKey(cx, cy);
+      if (chunkFoods.has(key)) return;
 
-/* FOOD */
-for(let i=0;i<food.length;i++){
-let f=food[i];
-let dx=player.x-f.x;
-let dy=player.y-f.y;
-let d=Math.sqrt(dx*dx+dy*dy);
+      const arr = [];
+      const far = Math.hypot(cx, cy);
 
-if(d<player.r){
-player.r+=f.big ? 0.8 : 0.25;
-food.splice(i,1);
-spawnFood();
-}
-}
+      const count = clamp(Math.floor(18 + far * 1.15 + rand(0, 12)), 18, 140);
+      const sizeBoost = 1 + Math.min(far * 0.08, 8);
+      const bigChance = clamp(0.08 + far * 0.003, 0.08, 0.36);
 
-/* BOTS */
-for(let i=0;i<bots.length;i++){
-let b=bots[i];
+      for (let i = 0; i < count; i++) {
+        const isBig = Math.random() < bigChance;
+        const r = isBig
+          ? rand(8, 18) * sizeBoost
+          : rand(2, 5) * sizeBoost;
 
-let dx=player.x-b.x;
-let dy=player.y-b.y;
-let d=Math.sqrt(dx*dx+dy*dy);
+        const food = {
+          x: cx * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20),
+          y: cy * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20),
+          r,
+          baseR: r,
+          vx: rand(-0.35, 0.35),
+          vy: rand(-0.35, 0.35),
+          chunkX: cx,
+          chunkY: cy,
+          chunkKey: key,
+          big: isBig,
+          color: isBig
+            ? `hsl(${Math.floor(rand(35, 55))}, 95%, 66%)`
+            : `hsl(${Math.floor(rand(0, 360))}, 85%, 60%)`
+        };
 
-/* eat */
-if(d<player.r && player.r>b.r){
-player.r+=b.r*0.05;
-bots.splice(i,1);
-spawnBot();
-}
+        arr.push(food);
+        foods.push(food);
+      }
 
-/* die */
-if(d<player.r && b.r>player.r){
-player.x=0;
-player.y=0;
-player.r=10;
-}
-}
-}
+      chunkFoods.set(key, arr);
+    }
 
-/* GRID */
-function drawGrid(){
-let step=120;
+    function unloadChunk(key) {
+      const arr = chunkFoods.get(key);
+      if (!arr) return;
 
-ctx.strokeStyle="rgba(255,255,255,0.04)";
+      foods = foods.filter(f => f.chunkKey !== key);
+      chunkFoods.delete(key);
+    }
 
-for(let x=-2000;x<2000;x+=step){
-ctx.beginPath();
-ctx.moveTo(x-cam.x+canvas.width/2,-2000);
-ctx.lineTo(x-cam.x+canvas.width/2,2000);
-ctx.stroke();
-}
+    function updateChunks() {
+      const { cx, cy } = currentChunk();
 
-for(let y=-2000;y<2000;y+=step){
-ctx.beginPath();
-ctx.moveTo(-2000,y-cam.y+canvas.height/2);
-ctx.lineTo(2000,y-cam.y+canvas.height/2);
-ctx.stroke();
-}
-}
+      const needed = new Set();
+      for (let x = cx - WORLD.loadRadius; x <= cx + WORLD.loadRadius; x++) {
+        for (let y = cy - WORLD.loadRadius; y <= cy + WORLD.loadRadius; y++) {
+          const key = chunkKey(x, y);
+          needed.add(key);
+          if (!chunkFoods.has(key)) generateChunk(x, y);
+        }
+      }
 
-/* DRAW */
-function draw(){
-ctx.clearRect(0,0,canvas.width,canvas.height);
+      for (const key of [...chunkFoods.keys()]) {
+        const [x, y] = key.split(',').map(Number);
+        if (Math.abs(x - cx) > WORLD.keepRadius || Math.abs(y - cy) > WORLD.keepRadius) {
+          unloadChunk(key);
+        }
+      }
+    }
 
-/* CAMERA */
-cam.x+=(player.x-cam.x)*0.08;
-cam.y+=(player.y-cam.y)*0.08;
+    function spawnBot() {
+      const angle = rand(0, Math.PI * 2);
+      const radius = rand(500, 1600);
 
-/* zoom out when big */
-cam.zoom=Math.max(0.4,Math.min(1.2,18/player.r));
+      const bigChance = clamp(0.18 + level * 0.01, 0.18, 0.72);
+      const isBig = Math.random() < bigChance;
 
-ctx.save();
-ctx.translate(canvas.width/2,canvas.height/2);
-ctx.scale(cam.zoom,cam.zoom);
-ctx.translate(-cam.x,-cam.y);
+      const sizeScale = 1 + level * 0.025;
+      let r = isBig
+        ? player.r * rand(1.08, 1.9) * sizeScale
+        : player.r * rand(0.22, 0.95);
 
-/* GRID */
-drawGrid();
+      r = clamp(r, 4, Math.max(50, player.r * 2.8));
 
-/* FOOD */
-for(let f of food){
-ctx.beginPath();
-ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
-ctx.fillStyle=f.color;
-ctx.fill();
-}
+      bots.push({
+        x: player.x + Math.cos(angle) * radius,
+        y: player.y + Math.sin(angle) * radius,
+        r,
+        vx: 0,
+        vy: 0,
+        dying: false,
+        scale: 1,
+        alpha: 1
+      });
+    }
 
-/* BOTS */
-for(let b of bots){
-botAI(b);
+    function maintainBots() {
+      while (bots.length < targetBotCount) spawnBot();
+    }
 
-ctx.beginPath();
-ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-ctx.fillStyle=b.r>player.r?"red":"lime";
-ctx.fill();
-}
+    function resetPlayer() {
+      player.x = 0;
+      player.y = 0;
+      player.r = 10;
+      level = 1;
+      levelStart = 10;
+      nextLevel = 24;
+      updateBotTargetCount();
+    }
 
-/* PLAYER */
-ctx.beginPath();
-ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
-ctx.fillStyle="white";
-ctx.fill();
+    function movePlayer() {
+      if (keys['w']) player.y -= player.speed;
+      if (keys['s']) player.y += player.speed;
+      if (keys['a']) player.x -= player.speed;
+      if (keys['d']) player.x += player.speed;
 
-ctx.restore();
-}
+      if (joy.active) {
+        player.x += joy.x * player.speed * 2;
+        player.y += joy.y * player.speed * 2;
+      }
+    }
 
-/* LOOP */
-function loop(){
-move();
-collide();
-draw();
+    function botAI(bot) {
+      if (bot.dying) {
+        bot.scale *= 0.88;
+        bot.alpha *= 0.92;
+        return;
+      }
 
-document.getElementById("size").innerText=Math.floor(player.r);
-document.getElementById("fill").style.width=Math.min(player.r/4,100)+"%";
+      const dx = player.x - bot.x;
+      const dy = player.y - bot.y;
+      const d = Math.hypot(dx, dy) + 0.001;
 
-requestAnimationFrame(loop);
-}
+      if (bot.r > player.r) {
+        bot.vx += (dx / d) * 0.48;
+        bot.vy += (dy / d) * 0.48;
+      } else {
+        bot.vx -= (dx / d) * 0.54;
+        bot.vy -= (dy / d) * 0.54;
+      }
 
-loop();
-</script>
+      const speedBoost = 1 + level * 0.012;
+      bot.vx *= 0.92;
+      bot.vy *= 0.92;
 
+      bot.x += bot.vx * speedBoost;
+      bot.y += bot.vy * speedBoost;
+    }
+
+    function eatFood() {
+      for (let i = foods.length - 1; i >= 0; i--) {
+        const f = foods[i];
+        f.x += f.vx;
+        f.y += f.vy;
+
+        f.vx *= 0.995;
+        f.vy *= 0.995;
+
+        const minX = f.chunkX * WORLD.chunkSize + 12;
+        const maxX = (f.chunkX + 1) * WORLD.chunkSize - 12;
+        const minY = f.chunkY * WORLD.chunkSize + 12;
+        const maxY = (f.chunkY + 1) * WORLD.chunkSize - 12;
+
+        if (f.x <= minX + f.r) {
+          f.x = minX + f.r;
+          f.vx *= -1;
+        }
+        if (f.x >= maxX - f.r) {
+          f.x = maxX - f.r;
+          f.vx *= -1;
+        }
+        if (f.y <= minY + f.r) {
+          f.y = minY + f.r;
+          f.vy *= -1;
+        }
+        if (f.y >= maxY - f.r) {
+          f.y = maxY - f.r;
+          f.vy *= -1;
+        }
+
+        const d = dist(player.x, player.y, f.x, f.y);
+
+        if (d < player.r + f.r * 0.8) {
+          player.r += f.big ? f.r * 0.08 : f.r * 0.03;
+          spawnBurst(f.x, f.y, f.big ? 12 : 7, f.color, f.big ? 1.2 : 1);
+          deleteFoodAt(i);
+        }
+      }
+    }
+
+    function updateBots() {
+      for (let i = bots.length - 1; i >= 0; i--) {
+        const b = bots[i];
+
+        if (b.dying) {
+          b.scale *= 0.88;
+          b.alpha *= 0.93;
+          if (b.scale < 0.05 || b.alpha < 0.05) {
+            bots.splice(i, 1);
+            spawnBot();
+          }
+          continue;
+        }
+
+        botAI(b);
+
+        const d = dist(player.x, player.y, b.x, b.y);
+        const hit = d < player.r + b.r * 0.82;
+
+        if (hit) {
+          if (player.r > b.r) {
+            b.dying = true;
+            spawnBurst(b.x, b.y, 15, '#ffffff', 1.1);
+            player.r += b.r * 0.08;
+          } else if (b.r > player.r) {
+            resetPlayer();
+            return;
+          }
+        }
+      }
+    }
+
+    function updateEffects() {
+      for (let i = effects.length - 1; i >= 0; i--) {
+        const e = effects[i];
+        e.x += e.vx;
+        e.y += e.vy;
+        e.vx *= 0.96;
+        e.vy *= 0.96;
+        e.life -= 1;
+
+        if (e.life <= 0) effects.splice(i, 1);
+      }
+    }
+
+    function drawGrid() {
+      const step = 120;
+      const left = cam.x - canvas.width / (2 * cam.zoom);
+      const right = cam.x + canvas.width / (2 * cam.zoom);
+      const top = cam.y - canvas.height / (2 * cam.zoom);
+      const bottom = cam.y + canvas.height / (2 * cam.zoom);
+
+      const startX = Math.floor(left / step) * step;
+      const endX = Math.ceil(right / step) * step;
+      const startY = Math.floor(top / step) * step;
+      const endY = Math.ceil(bottom / step) * step;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+      ctx.lineWidth = 1;
+
+      for (let x = startX; x <= endX; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, top - 2 * step);
+        ctx.lineTo(x, bottom + 2 * step);
+        ctx.stroke();
+      }
+
+      for (let y = startY; y <= endY; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(left - 2 * step, y);
+        ctx.lineTo(right + 2 * step, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawFood() {
+      for (const f of foods) {
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fillStyle = f.color;
+        ctx.fill();
+      }
+    }
+
+    function drawBots() {
+      for (const b of bots) {
+        ctx.save();
+        ctx.globalAlpha = b.alpha;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r * b.scale, 0, Math.PI * 2);
+        ctx.fillStyle = b.r > player.r ? '#ff4d4d' : '#7bff7b';
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function drawPlayer() {
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.max(12, Math.min(28, player.r * 0.35))}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(Math.floor(player.r), player.x, player.y - player.r - 16);
+    }
+
+    function drawEffects() {
+      for (const e of effects) {
+        if (e.ring) {
+          ctx.save();
+          ctx.globalAlpha = clamp(e.life / 16, 0, 1);
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.maxR * (1 - e.life / 16), 0, Math.PI * 2);
+          ctx.strokeStyle = e.color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.globalAlpha = clamp(e.life / 28, 0, 1);
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+          ctx.fillStyle = e.color;
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+    }
+
+    function drawWorld() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      cam.x += (player.x - cam.x) * 0.08;
+      cam.y += (player.y - cam.y) * 0.08;
+
+      const targetZoom = clamp(1.2 - Math.log10(player.r + 1) * 0.12, 0.25, 1.2);
+      cam.zoom += (targetZoom - cam.zoom) * 0.08;
+
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.scale(cam.zoom, cam.zoom);
+      ctx.translate(-cam.x, -cam.y);
+
+      drawGrid();
+      drawFood();
+      drawBots();
+      drawEffects();
+      drawPlayer();
+
+      ctx.restore();
+    }
+
+    function updateJoystickFromTouch(touch) {
+      const rect = joyBase.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      let dx = touch.clientX - cx;
+      let dy = touch.clientY - cy;
+
+      const max = 45;
+      const len = Math.hypot(dx, dy);
+      if (len > max) {
+        dx = dx / len * max;
+        dy = dy / len * max;
+      }
+
+      joy.x = dx / max;
+      joy.y = dy / max;
+      joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+
+    document.addEventListener('keydown', e => {
+      keys[e.key.toLowerCase()] = true;
+    });
+
+    document.addEventListener('keyup', e => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    if (isTouch) {
+      joyBase.style.display = 'block';
+
+      joyBase.addEventListener('touchstart', e => {
+        joy.active = true;
+        updateJoystickFromTouch(e.touches[0]);
+      }, { passive: true });
+
+      joyBase.addEventListener('touchmove', e => {
+        if (!joy.active) return;
+        updateJoystickFromTouch(e.touches[0]);
+      }, { passive: true });
+
+      joyBase.addEventListener('touchend', () => {
+        joy.active = false;
+        joy.x = 0;
+        joy.y = 0;
+        joyStick.style.transform = 'translate(0px, 0px)';
+      });
+    }
+
+    function updatePlayerMovement() {
+      if (keys['w']) player.y -= player.speed;
+      if (keys['s']) player.y += player.speed;
+      if (keys['a']) player.x -= player.speed;
+      if (keys['d']) player.x += player.speed;
+
+      if (joy.active) {
+        player.x += joy.x * player.speed * 2;
+        player.y += joy.y * player.speed * 2;
+      }
+    }
+
+    function updateUI() {
+      uiLevel.textContent = level;
+      uiSize.textContent = Math.floor(player.r);
+      uiFill.style.width = `${levelProgress() * 100}%`;
+    }
+
+    function gameLoop() {
+      updatePlayerMovement();
+      updateChunks();
+      maintainBots();
+      eatFood();
+      updateBots();
+      updateEffects();
+      updateLevelSystem();
+      drawWorld();
+      updateUI();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    updateChunks();
+    maintainBots();
+    gameLoop();
+  </script>
 </body>
 </html>
