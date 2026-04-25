@@ -1345,10 +1345,10 @@
         }
       }
 
-      if (keys['w']) player.y -= speed;
-      if (keys['s']) player.y += speed;
-      if (keys['a']) player.x -= speed;
-      if (keys['d']) player.x += speed;
+      if (keys['w'] || keys['arrowup']) player.y -= speed;
+      if (keys['s'] || keys['arrowdown']) player.y += speed;
+      if (keys['a'] || keys['arrowleft']) player.x -= speed;
+      if (keys['d'] || keys['arrowright']) player.x += speed;
       if (joy.active) {
         player.x += joy.x * speed * 2;
         player.y += joy.y * speed * 2;
@@ -2058,8 +2058,36 @@
     syncIconPreviews();
     refreshUpgradeUI();
 
+    const movementKeys = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
+    function setKeyState(rawKey, isDown) {
+      const key = String(rawKey || '').toLowerCase();
+      if (!key) return;
+      keys[key] = isDown;
+      if (key === 'arrowup') keys['w'] = isDown;
+      if (key === 'arrowdown') keys['s'] = isDown;
+      if (key === 'arrowleft') keys['a'] = isDown;
+      if (key === 'arrowright') keys['d'] = isDown;
+    }
+    function clearMovementState() {
+      for (const k of ['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift']) keys[k] = false;
+      joy.active = false;
+      joy.x = 0;
+      joy.y = 0;
+      joyStick.style.transform = 'translate(0px, 0px)';
+      player.sprinting = false;
+      sprintBtn.classList.remove('on');
+    }
+
+    window.addEventListener('blur', clearMovementState);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) clearMovementState();
+    });
+
     document.addEventListener('keydown', e => {
-      keys[e.key.toLowerCase()] = true;
+      setKeyState(e.key, true);
+      if (movementKeys.has(String(e.key || '').toLowerCase()) || e.key === 'Shift' || e.key === ' ' || String(e.key || '').startsWith('Arrow')) {
+        e.preventDefault();
+      }
       if (e.key === 'F3') {
         e.preventDefault();
         debugEnabled = !debugEnabled;
@@ -2067,22 +2095,23 @@
       }
       if (e.key === 'Shift') toggleSprint(true);
       if (e.key === 'Escape' && redeemOverlay.style.display === 'flex') closeRedeem();
-    });
+    }, { passive: false });
+
     document.addEventListener('keyup', e => {
-      keys[e.key.toLowerCase()] = false;
+      setKeyState(e.key, false);
       if (e.key === 'Shift') toggleSprint(false);
     });
 
     if (isTouch) {
       joyBase.style.display = 'block';
-      function updateJoystickFromTouch(touch) {
+      const updateJoystickFromPoint = (clientX, clientY) => {
         const rect = joyBase.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
-        let dx = touch.clientX - cx;
-        let dy = touch.clientY - cy;
+        let dx = clientX - cx;
+        let dy = clientY - cy;
         const max = 45;
-        const len = Math.hypot(dx, dy);
+        const len = Math.hypot(dx, dy) || 1;
         if (len > max) {
           dx = dx / len * max;
           dy = dy / len * max;
@@ -2090,21 +2119,42 @@
         joy.x = dx / max;
         joy.y = dy / max;
         joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
-      }
-      joyBase.addEventListener('touchstart', e => {
-        joy.active = true;
-        updateJoystickFromTouch(e.touches[0]);
-      }, { passive: true });
-      joyBase.addEventListener('touchmove', e => {
-        if (!joy.active) return;
-        updateJoystickFromTouch(e.touches[0]);
-      }, { passive: true });
-      joyBase.addEventListener('touchend', () => {
+      };
+
+      const releaseJoystick = () => {
         joy.active = false;
         joy.x = 0;
         joy.y = 0;
         joyStick.style.transform = 'translate(0px, 0px)';
+      };
+
+      joyBase.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'mouse') return;
+        joy.active = true;
+        joyBase.setPointerCapture?.(e.pointerId);
+        updateJoystickFromPoint(e.clientX, e.clientY);
       });
+
+      joyBase.addEventListener('pointermove', e => {
+        if (!joy.active) return;
+        updateJoystickFromPoint(e.clientX, e.clientY);
+      });
+
+      joyBase.addEventListener('pointerup', releaseJoystick);
+      joyBase.addEventListener('pointercancel', releaseJoystick);
+      joyBase.addEventListener('lostpointercapture', releaseJoystick);
+
+      joyBase.addEventListener('touchstart', e => {
+        if (!e.touches || !e.touches[0]) return;
+        joy.active = true;
+        updateJoystickFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      joyBase.addEventListener('touchmove', e => {
+        if (!joy.active || !e.touches || !e.touches[0]) return;
+        updateJoystickFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      joyBase.addEventListener('touchend', releaseJoystick);
+      joyBase.addEventListener('touchcancel', releaseJoystick);
     }
 
     function loadAllAndStart() {
@@ -2127,4 +2177,4 @@
   })();
   </script>
 </body>
-  </html>
+              </html>
