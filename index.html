@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Circle Growth Test Mode</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+body{
+margin:0;
+overflow:hidden;
+background:#0b0b12;
+font-family:system-ui;
+color:white;
+}
+
+#ui{
+position:fixed;
+top:10px;
+left:10px;
+z-index:10;
+background:rgba(255,255,255,0.05);
+padding:10px;
+border-radius:12px;
+backdrop-filter:blur(10px);
+}
+
+button{
+margin-top:5px;
+padding:6px 10px;
+border:none;
+border-radius:8px;
+background:#ff8a3d;
+cursor:pointer;
+}
+
+canvas{display:block;}
+</style>
+</head>
+<body>
+
+<div id="ui">
+<b>Circle Test Mode</b><br>
+Size: <span id="size">10</span><br>
+Coins: <span id="coins">0</span><br>
+<button onclick="sell()">Sell Size</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let player = {
+x: canvas.width/2,
+y: canvas.height/2,
+r: 10,
+speed: 3
+};
+
+let coins = 0;
+
+let foods = [];
+
+function spawnFood(){
+foods.push({
+x: Math.random()*canvas.width,
+y: Math.random()*canvas.height,
+r: Math.random()*4+2,
+color: `hsl(${Math.random()*360},80%,60%)`
+});
+}
+
+for(let i=0;i<80;i++) spawnFood();
+
+let keys = {};
+
+document.addEventListener("keydown",(e)=>keys[e.key.toLowerCase()]=true);
+document.addEventListener("keyup",(e)=>keys[e.key.toLowerCase()]=false);
+
+// MOBILE JOYSTICK SIMPLE
+let touch=false;
+let tx=0,ty=0;
+
+canvas.addEventListener("touchstart",e=>{
+touch=true;
+});
+canvas.addEventListener("touchmove",e=>{
+let t=e.touches[0];
+tx=(t.clientX-player.x)/50;
+ty=(t.clientY-player.y)/50;
+});
+canvas.addEventListener("touchend",()=>touch=false);
+
+function move(){
+if(keys["w"]) player.y-=player.speed;
+if(keys["s"]) player.y+=player.speed;
+if(keys["a"]) player.x-=player.speed;
+if(keys["d"]) player.x+=player.speed;
+
+if(touch){
+player.x+=tx;
+player.y+=ty;
+}
+
+// bounds
+player.x=Math.max(0,Math.min(canvas.width,player.x));
+player.y=Math.max(0,Math.min(canvas.height,player.y));
+}
+
+function drawPlayer(){
+let color="white";
+
+if(player.r>100) color="red";
+else if(player.r>30) color="orange";
+else if(player.r>15) color="yellow";
+else color="white";
+
+ctx.beginPath();
+ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
+ctx.fillStyle=color;
+ctx.fill();
+
+ctx.fillStyle="white";
+ctx.font="12px system-ui";
+ctx.fillText(Math.floor(player.r),player.x-10,player.y-15);
+}
+
+function drawFood(){
+for(let i=0;i<foods.length;i++){
+let f=foods[i];
+
+ctx.beginPath();
+ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+ctx.fillStyle=f.color;
+ctx.fill();
+
+// collision
+let dx=player.x-f.x;
+let dy=player.y-f.y;
+let dist=Math.sqrt(dx*dx+dy*dy);
+
+if(dist<player.r){
+player.r+=0.3;
+foods.splice(i,1);
+spawnFood();
+}
+}
+}
+
+function sell(){
+coins+=Math.floor(player.r);
+player.r=10;
+document.getElementById("coins").innerText=coins;
+}
+
+function loop(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+move();
+drawFood();
+drawPlayer();
+
+document.getElementById("size").innerText=Math.floor(player.r);
+
+requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
