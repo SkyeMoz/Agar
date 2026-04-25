@@ -121,7 +121,9 @@
       border:1px solid rgba(255,255,255,.07);
       display:none;
       max-height:40vh;
-      overflow:auto
+      overflow:auto;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(255,138,61,.8) rgba(255,255,255,.07)
     }
     #debugPanel h3{
       margin:0 0 8px;
@@ -214,6 +216,8 @@
       max-height:min(92dvh,920px);
       overflow:auto;
       -webkit-overflow-scrolling:touch;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(255,138,61,.85) rgba(255,255,255,.06);
       border-radius:22px;
       background:linear-gradient(180deg,rgba(24,18,13,.96),rgba(12,12,18,.96));
       border:1px solid rgba(255,255,255,.10);
@@ -261,6 +265,22 @@
       font-size:14px;
       margin:8px 0
     }
+    .menuField[type="file"]{
+      padding:10px 12px
+    }
+    .menuField[type="file"]::file-selector-button{
+      border:0;
+      margin-right:12px;
+      padding:9px 12px;
+      border-radius:10px;
+      background:linear-gradient(180deg,#ffb36b,var(--accent));
+      color:#1a1007;
+      font-weight:900;
+      cursor:pointer
+    }
+    .menuField[type="file"]::file-selector-button:hover{
+      filter:brightness(1.04)
+    }
     .menuLabel{
       text-align:left;
       color:var(--muted);
@@ -278,7 +298,9 @@
       color:var(--muted);
       line-height:1.45;
       font-size:14px;
-      white-space:pre-line
+      white-space:pre-line;
+      scrollbar-width:thin;
+      scrollbar-color:rgba(255,138,61,.85) rgba(255,255,255,.06)
     }
     .buyGood{
       background:linear-gradient(180deg,#6dff83,#2fd85d) !important;
@@ -365,6 +387,35 @@
       color:var(--muted)
     }
 
+    .scrollFancy::-webkit-scrollbar,
+    .card::-webkit-scrollbar,
+    #debugPanel::-webkit-scrollbar,
+    .statusBox::-webkit-scrollbar{
+      width:10px;
+      height:10px
+    }
+    .scrollFancy::-webkit-scrollbar-track,
+    .card::-webkit-scrollbar-track,
+    #debugPanel::-webkit-scrollbar-track,
+    .statusBox::-webkit-scrollbar-track{
+      background:rgba(255,255,255,.06);
+      border-radius:999px
+    }
+    .scrollFancy::-webkit-scrollbar-thumb,
+    .card::-webkit-scrollbar-thumb,
+    #debugPanel::-webkit-scrollbar-thumb,
+    .statusBox::-webkit-scrollbar-thumb{
+      background:linear-gradient(180deg,rgba(255,179,107,.95),rgba(255,138,61,.95));
+      border-radius:999px;
+      border:2px solid rgba(0,0,0,.18)
+    }
+    .scrollFancy::-webkit-scrollbar-thumb:hover,
+    .card::-webkit-scrollbar-thumb:hover,
+    #debugPanel::-webkit-scrollbar-thumb:hover,
+    .statusBox::-webkit-scrollbar-thumb:hover{
+      background:linear-gradient(180deg,rgba(255,214,132,.98),rgba(255,153,87,.98))
+    }
+
     @media (max-width:640px){
       #ui{
         min-width:210px;
@@ -423,6 +474,7 @@
         <button id="retryBtn" type="button">Retry</button>
         <button id="redeemBtn" type="button" class="ghost">Redeem</button>
       </div>
+      <button id="resetSaveBtn" type="button" class="buyBad" style="width:100%;margin-top:10px;">Reset Save</button>
 
       <div class="section">
         <h2 style="font-size:18px;margin-bottom:6px;">Upgrade Mode</h2>
@@ -440,6 +492,26 @@
           </button>
           <button id="upMagnetBtn" class="upgradeBtn" type="button">
             <div class="name">Magnet Radius</div>
+            <div class="value">Value 🟡 0</div>
+            <div class="level">Lv 0 / 999</div>
+          </button>
+          <button id="upBotsBtn" class="upgradeBtn" type="button">
+            <div class="name">More Bots</div>
+            <div class="value">Value 🟡 0</div>
+            <div class="level">Lv 0 / 999</div>
+          </button>
+          <button id="upDropletsBtn" class="upgradeBtn" type="button">
+            <div class="name">More Droplets</div>
+            <div class="value">Value 🟡 0</div>
+            <div class="level">Lv 0 / 999</div>
+          </button>
+          <button id="upGemsBtn" class="upgradeBtn" type="button">
+            <div class="name">More Gems</div>
+            <div class="value">Value 🟡 0</div>
+            <div class="level">Lv 0 / 999</div>
+          </button>
+          <button id="upFuelBtn" class="upgradeBtn" type="button">
+            <div class="name">More Fuel</div>
             <div class="value">Value 🟡 0</div>
             <div class="level">Lv 0 / 999</div>
           </button>
@@ -524,15 +596,22 @@
     const gameOverText = document.getElementById('gameOverText');
     const retryBtn = document.getElementById('retryBtn');
     const redeemBtn = document.getElementById('redeemBtn');
+    const resetSaveBtn = document.getElementById('resetSaveBtn');
+
     const playerIconInput = document.getElementById('playerIconInput');
     const botIconInput = document.getElementById('botIconInput');
     const playerPreview = document.getElementById('playerPreview');
     const botPreview = document.getElementById('botPreview');
     const saveIconsBtn = document.getElementById('saveIconsBtn');
     const resetIconsBtn = document.getElementById('resetIconsBtn');
+
     const upStarterBtn = document.getElementById('upStarterBtn');
     const upSpeedBtn = document.getElementById('upSpeedBtn');
     const upMagnetBtn = document.getElementById('upMagnetBtn');
+    const upBotsBtn = document.getElementById('upBotsBtn');
+    const upDropletsBtn = document.getElementById('upDropletsBtn');
+    const upGemsBtn = document.getElementById('upGemsBtn');
+    const upFuelBtn = document.getElementById('upFuelBtn');
     const upgradeNote = document.getElementById('upgradeNote');
 
     const redeemOverlay = document.getElementById('redeemOverlay');
@@ -551,13 +630,16 @@
     const SHOP_MANIFEST_URL = 'shop/manifest.json';
     const SHOP_BASE_URL = 'shop/';
     const WORLD = { chunkSize: 700, loadRadius: 3, keepRadius: 5 };
-    const MAX_BOTS = 64;
+    const MAX_BOTS = 90;
     const MAX_EFFECTS = 260;
+    const MAX_FOODS = 3200;
     const BOT_NAMES = [
+      'Alex','Aiden','Arlo','Asher','Atlas','Bennett','Blake','Carter','Cole','Declan','Eden','Eli','Finn','Flynn','Gavin','Hayden','Ivy','Jace','Jasper','Kai','Leo','Liam','Mason','Nolan','Noah','Owen','Parker','Quinn','Reed','Rowan','Ryker','Silas','Theo','Troy','Wes','Wyatt','Zane',
+      'SkyeMozYT','SkibidiAhh','Player72992','Player00001',
       'Alpha','Bravo','Cobra','Delta','Echo','Falcon','Ghost','Hunter','Ion','Jinx','Knight','Luna','Nova','Orion','Pixel','Quark','Raven','Sting','Titan','Umbra','Viper','Wolf','Zephyr','Aster','Blaze','Comet','Drift','Ember','Frost','Glint','Haze','Indigo','Jade','Kilo','Lumen','Mira','Nox','Onyx','Prism','Quest','Rift','Solar','Talon','Ultra','Vector','Wisp','Xeno','Yara','Zion','Amber','Beryl','Chrome','Dusk','Eon','Flux','Glory','Halo','Iris','Jolt','Karma','Lyric'
     ];
     const DEFAULT_ICON_STATE = { player: null, bot: null };
-    const DEFAULT_UPGRADES = { starterSize: 0, speed: 0, magnet: 0 };
+    const DEFAULT_UPGRADES = { starterSize: 0, speed: 0, magnet: 0, bots: 0, droplets: 0, gems: 0, fuel: 0 };
 
     const crateImg = new Image(); crateImg.src = 'settings/Crate.png';
     const gemImg = new Image(); gemImg.src = 'settings/gem.png';
@@ -654,8 +736,8 @@
     }
 
     let money = Number(localStorage.getItem(MONEY_KEY) || 0);
-    let upgrades = loadJson(UPGRADE_KEY, { ...DEFAULT_UPGRADES });
-    let iconState = loadJson(ICON_KEY, { ...DEFAULT_ICON_STATE });
+    let upgrades = { ...DEFAULT_UPGRADES, ...loadJson(UPGRADE_KEY, { ...DEFAULT_UPGRADES }) };
+    let iconState = { ...DEFAULT_ICON_STATE, ...loadJson(ICON_KEY, { ...DEFAULT_ICON_STATE }) };
     let customIcons = { player: iconState.player || null, bot: iconState.bot || null };
     let playerIconImage = null;
     let botIconImage = null;
@@ -690,6 +772,7 @@
     let lootIntensity = 1;
     let worldReadyAt = performance.now() + 5000;
     let waveRaidNextTime = performance.now() + 20 * 60 * 1000;
+    let nextCrateSpawnAt = performance.now() + 120000;
     let manifestLoaded = false;
 
     function upgradePrice(base, lvl) {
@@ -705,25 +788,45 @@
       return 60 + upgrades.magnet * 14;
     }
     function getPlayerMaxStamina() {
-      return Math.max(100, Math.floor(100 + player.r * 2));
+      return Math.max(100, Math.floor(100 + upgrades.fuel * 35 + player.r * 1.8));
     }
     function levelProgress() {
       const range = Math.max(1, nextLevel - levelStart);
       return clamp((player.r - levelStart) / range, 0, 1);
     }
     function updateBotTargetCount() {
-      targetBotCount = clamp(18 + Math.floor(level * 1.2) + Math.floor(killCount / 5), 18, MAX_BOTS);
+      targetBotCount = clamp(20 + Math.floor(level * 1.25) + Math.floor(killCount / 5) + upgrades.bots * 4, 20, MAX_BOTS);
     }
     function addMoney(n) {
       money += n;
       saveMoney();
     }
 
+    function getFoodSizeScale() {
+      return 1 + Math.log10(player.r + 10) * 0.55 + upgrades.droplets * 0.05;
+    }
+    function getFoodCountMultiplier() {
+      return 1 + upgrades.droplets * 0.12 + Math.log10(player.r + 10) * 0.05;
+    }
+    function getGemChance() {
+      return clamp(0.08 + upgrades.gems * 0.03 + Math.log10(player.r + 10) * 0.02, 0.08, 0.72);
+    }
+    function getGemValueMultiplier() {
+      return 1 + upgrades.gems * 0.08 + Math.log10(player.r + 10) * 0.03;
+    }
+    function getCrateSize() {
+      return clamp(14 + Math.log10(player.r + 10) * 6 + upgrades.gems * 0.35, 14, 62);
+    }
+
     function refreshUpgradeUI() {
       const items = [
         { el: upStarterBtn, name: 'Starter Size', val: upgrades.starterSize, price: upgradePrice(40, upgrades.starterSize) },
         { el: upSpeedBtn, name: 'Speed', val: upgrades.speed, price: upgradePrice(45, upgrades.speed) },
-        { el: upMagnetBtn, name: 'Magnet Radius', val: upgrades.magnet, price: upgradePrice(35, upgrades.magnet) }
+        { el: upMagnetBtn, name: 'Magnet Radius', val: upgrades.magnet, price: upgradePrice(35, upgrades.magnet) },
+        { el: upBotsBtn, name: 'More Bots', val: upgrades.bots, price: upgradePrice(60, upgrades.bots) },
+        { el: upDropletsBtn, name: 'More Droplets', val: upgrades.droplets, price: upgradePrice(55, upgrades.droplets) },
+        { el: upGemsBtn, name: 'More Gems', val: upgrades.gems, price: upgradePrice(65, upgrades.gems) },
+        { el: upFuelBtn, name: 'More Fuel', val: upgrades.fuel, price: upgradePrice(50, upgrades.fuel) }
       ];
       items.forEach(({ el, name, val, price }) => {
         el.querySelector('.name').textContent = name;
@@ -748,7 +851,17 @@
       saveMoney();
       upgrades[key] += 1;
       saveJson(UPGRADE_KEY, upgrades);
+
+      if (key === 'fuel') {
+        player.maxStamina = getPlayerMaxStamina();
+        player.stamina = player.maxStamina;
+      } else if (key === 'starterSize') {
+        player.maxStamina = getPlayerMaxStamina();
+      }
+
+      updateBotTargetCount();
       refreshUpgradeUI();
+      updateShopPreview();
       toast('Upgrade bought', 'good', 1400);
     }
 
@@ -940,23 +1053,48 @@
         { type: 'speed', name: 'Speed', duration: Math.floor(rand(60 * 60, 5 * 60 * 60)) },
         { type: 'size', name: '+Size', amount: Math.floor(rand(1, 9999)) },
         { type: 'fuel', name: 'Speed Fuel +99', amount: 99 },
-        { type: 'shield', name: 'Blue Shield', duration: 10 * 60 },
-        { type: 'explosion', name: 'Explosion', duration: Math.floor(rand(3 * 60, 8 * 60)) }
+        { type: 'shield', name: 'Blue Shield', duration: 10 * 60 }
       ];
       return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function spawnTimedCrate(forceNear = false) {
+      if (foods.length >= MAX_FOODS) return;
+      const angle = rand(0, Math.PI * 2);
+      const radius = forceNear ? rand(480, 880) : rand(760, 1750);
+      const r = getCrateSize();
+      const crate = {
+        x: player.x + Math.cos(angle) * radius,
+        y: player.y + Math.sin(angle) * radius,
+        r,
+        chunkX: Math.floor((player.x + Math.cos(angle) * radius) / WORLD.chunkSize),
+        chunkY: Math.floor((player.y + Math.sin(angle) * radius) / WORLD.chunkSize),
+        chunkKey: '',
+        kind: 'crate',
+        power: pickRandomPower(),
+        nearAnnounced: false,
+        vx: 0,
+        vy: 0
+      };
+      crate.chunkKey = chunkKey(crate.chunkX, crate.chunkY);
+      foods.push(crate);
+      spawnCrateNotice(crate.x, crate.y);
     }
 
     function generateChunk(cx, cy) {
       const key = chunkKey(cx, cy);
       if (chunkFoods.has(key)) return;
 
+      const budget = MAX_FOODS - foods.length;
+      if (budget <= 0) return;
+
       const arr = [];
       const far = Math.hypot(cx, cy);
-      const foodCount = clamp(Math.floor(18 + far * 1.15 + rand(0, 12)), 18, 140);
-      const sizeBoost = 1 + Math.min(far * 0.08, 8);
+      const baseFoodCount = clamp(Math.floor((18 + far * 1.05 + rand(0, 10)) * getFoodCountMultiplier()), 12, 160);
+      const foodCount = Math.min(baseFoodCount, Math.max(10, Math.floor(budget * 0.75)));
+      const sizeBoost = getFoodSizeScale() * (1 + Math.min(far * 0.03, 3));
       const bigChance = clamp(0.08 + far * 0.003, 0.08, 0.36);
-      const crateChance = clamp(0.06 + lootIntensity * 0.004, 0.06, 0.18);
-      const gemChance = clamp(0.18 + lootIntensity * 0.007, 0.18, 0.42);
+      const gemChance = getGemChance();
 
       for (let i = 0; i < foodCount; i++) {
         const isBig = Math.random() < bigChance;
@@ -978,31 +1116,12 @@
         foods.push(food);
       }
 
-      if (Math.random() < crateChance) {
-        const centerX = cx * WORLD.chunkSize + WORLD.chunkSize / 2;
-        const centerY = cy * WORLD.chunkSize + WORLD.chunkSize / 2;
-        const crate = {
-          x: clamp(centerX + rand(-180, 180), cx * WORLD.chunkSize + 30, (cx + 1) * WORLD.chunkSize - 30),
-          y: clamp(centerY + rand(-180, 180), cy * WORLD.chunkSize + 30, (cy + 1) * WORLD.chunkSize - 30),
-          r: 10,
-          chunkX: cx,
-          chunkY: cy,
-          chunkKey: key,
-          kind: 'crate',
-          power: pickRandomPower(),
-          nearAnnounced: false
-        };
-        arr.push(crate);
-        foods.push(crate);
-        spawnCrateNotice(crate.x, crate.y);
-      }
-
       const gemCount = Math.random() < gemChance ? 1 + (Math.random() < 0.5 ? 1 : 0) : 0;
       for (let g = 0; g < gemCount; g++) {
         const gem = {
           x: cx * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35),
           y: cy * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35),
-          r: 9,
+          r: clamp((9 + Math.log10(player.r + 10) * 2 + upgrades.gems * 0.15) * getGemValueMultiplier(), 9, 34),
           chunkX: cx,
           chunkY: cy,
           chunkKey: key,
@@ -1035,19 +1154,23 @@
       }
     }
 
-    function spawnBot(forcePos = null, forceSize = null) {
+    function spawnBot(forcePos = null, forceSize = null, nearPlayer = false) {
       if (bots.length >= MAX_BOTS + 10) return;
 
       const angle = rand(0, Math.PI * 2);
-      const radius = rand(520, 1700);
+      const near = nearPlayer || Math.random() < 0.72;
+      const radius = near ? rand(520, 1300) : rand(1400, 2500);
       const personality = ['aggressive', 'coward', 'scavenger', 'wanderer', 'chaotic'][Math.floor(Math.random() * 5)];
-      const isBig = Math.random() < clamp(0.08 + level * 0.004 + killCount * 0.001, 0.08, 0.35);
-      const sizeScale = 1 + level * 0.025 + killCount * 0.0015;
+      const sizeScale = 1 + Math.log10(player.r + 10) * 0.45 + level * 0.02 + upgrades.bots * 0.03;
+      const isBig = Math.random() < clamp(0.08 + level * 0.004 + killCount * 0.001, 0.08, 0.42);
 
-      let r = forceSize != null ? forceSize : (isBig ? player.r * rand(1.05, 1.35) * sizeScale : rand(2, 45));
-      r = clamp(r, 1, Math.max(400, player.r * 3.2));
+      let r = forceSize != null ? forceSize : (isBig ? player.r * rand(0.65, 1.15) * sizeScale : rand(2, 45) * sizeScale * 0.52);
+      r = clamp(r, 1, Math.max(480, player.r * 3.5));
 
-      const pos = forcePos || { x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius };
+      const pos = forcePos || {
+        x: player.x + Math.cos(angle) * radius,
+        y: player.y + Math.sin(angle) * radius
+      };
 
       bots.push({
         x: pos.x,
@@ -1072,17 +1195,18 @@
     }
 
     function maintainBots() {
-      while (bots.length < targetBotCount) spawnBot();
+      while (bots.length < targetBotCount) spawnBot(null, null, Math.random() < 0.8);
     }
 
     function spawnRaidWave() {
-      const count = Math.floor(rand(12, 27));
+      const count = Math.floor(rand(14, 30));
       toast('Wave raid incoming!', 'bad', 1800);
       for (let i = 0; i < count; i++) {
         if (bots.length >= MAX_BOTS + 10) break;
         spawnBot(
-          { x: player.x + rand(-2200, 2200), y: player.y + rand(-2200, 2200) },
-          rand(1, 240)
+          { x: player.x + rand(-2400, 2400), y: player.y + rand(-2400, 2400) },
+          rand(1, 260),
+          true
         );
       }
     }
@@ -1101,23 +1225,14 @@
       for (const other of bots) {
         if (other === bot || other.dying) continue;
         const d = dist(bot.x, bot.y, other.x, other.y);
-        if (other.r > bot.r * 1.12 && d < bigThreatD) {
-          bigThreatD = d;
-          nearestBigThreat = other;
-        }
-        if (other.r < bot.r * 0.9 && d < smallPreyD) {
-          smallPreyD = d;
-          nearestSmallPreyBot = other;
-        }
+        if (other.r > bot.r * 1.12 && d < bigThreatD) { bigThreatD = d; nearestBigThreat = other; }
+        if (other.r < bot.r * 0.9 && d < smallPreyD) { smallPreyD = d; nearestSmallPreyBot = other; }
       }
 
       for (const f of foods) {
         if (f.kind !== 'food') continue;
         const d = dist(bot.x, bot.y, f.x, f.y);
-        if (d < foodD) {
-          foodD = d;
-          nearestFood = f;
-        }
+        if (d < foodD) { foodD = d; nearestFood = f; }
       }
 
       const goAggro = bot.personality === 'aggressive' || bot.personality === 'chaotic';
@@ -1135,13 +1250,13 @@
           bot.target = player;
           return;
         }
-        if (playerSmaller && goAggro && Math.random() < 0.6) {
+        if (playerSmaller && goAggro && Math.random() < 0.65) {
           bot.mood = 'hunt-player';
           bot.target = player;
           return;
         }
       }
-      if (nearestSmallPreyBot && goAggro && Math.random() < 0.64) {
+      if (nearestSmallPreyBot && goAggro && Math.random() < 0.68) {
         bot.mood = 'hunt-bot';
         bot.target = nearestSmallPreyBot;
         return;
@@ -1204,9 +1319,6 @@
       } else if (power.type === 'shield') {
         player.shieldTime = Math.max(player.shieldTime, power.duration);
         toast('PowerLoot: Blue Shield', 'blue');
-      } else if (power.type === 'explosion') {
-        effects.push({ x, y, vx: 0, vy: 0, r: 7, life: power.duration, color: '#ffffff', ring: false, explode: true });
-        toast('PowerLoot: Explosion droplet', 'bad');
       }
     }
 
@@ -1215,9 +1327,10 @@
       if (item.kind === 'gem') {
         const roll = Math.random();
         let reward = 0;
-        if (roll < 0.000089) reward = Math.floor(rand(1000000, 99999999));
-        else if (roll < 0.03) reward = Math.floor(rand(5000, 999999));
-        else reward = Math.floor(rand(1, 4999));
+        const mult = getGemValueMultiplier();
+        if (roll < 0.000089) reward = Math.floor(rand(1000000, 99999999) * mult);
+        else if (roll < 0.03) reward = Math.floor(rand(5000, 999999) * mult);
+        else reward = Math.floor(rand(1, 4999) * mult);
         addMoney(reward);
         player.stamina = Math.min(player.maxStamina, player.stamina + Math.max(1, Math.floor(reward / 2500)));
         toast(`Gem +${reward} coins`, 'good');
@@ -1226,6 +1339,7 @@
 
     function updateFoods() {
       const magnetRadius = getMagnetRadius();
+
       for (let i = foods.length - 1; i >= 0; i--) {
         const f = foods[i];
 
@@ -1251,7 +1365,7 @@
           }
         }
 
-        if (f.kind === 'gem') {
+        if (f.kind === 'food' || f.kind === 'gem' || f.kind === 'crate') {
           const dMag = dist(player.x, player.y, f.x, f.y);
           if (dMag < magnetRadius) {
             const pull = (magnetRadius - dMag) / magnetRadius;
@@ -1414,7 +1528,7 @@
         if (bots[i].dying && (bots[i].scale < 0.05 || bots[i].alpha < 0.05)) bots.splice(i, 1);
       }
 
-      while (bots.length < targetBotCount) spawnBot();
+      while (bots.length < targetBotCount) spawnBot(null, null, Math.random() < 0.82);
 
       for (const e of effects) {
         e.x += e.vx;
@@ -1498,18 +1612,45 @@
     function drawFoods() {
       for (const f of foods) {
         if (f.kind === 'crate') {
-          drawCircle(f.x, f.y, f.r, '#c9a37b', crateImg);
           ctx.save();
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 11px system-ui';
+          const s = f.r * 2.2;
+          ctx.translate(f.x, f.y);
+          ctx.rotate(0.28);
+          ctx.fillStyle = 'rgba(255,191,120,.95)';
+          ctx.strokeStyle = 'rgba(255,255,255,.88)';
+          ctx.lineWidth = Math.max(2, f.r * 0.18);
+          ctx.shadowColor = 'rgba(255,138,61,.35)';
+          ctx.shadowBlur = 18;
+          ctx.fillRect(-s / 2, -s / 2, s, s);
+          ctx.strokeRect(-s / 2, -s / 2, s, s);
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#1a1007';
+          ctx.font = `900 ${Math.max(10, f.r * 0.55)}px system-ui`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(f.power?.name?.slice(0, 1) || 'C', f.x, f.y + 0.5);
+          ctx.fillText('C', 0, 1);
+          ctx.restore();
+
+          ctx.save();
+          ctx.fillStyle = 'rgba(255,255,255,.92)';
+          ctx.font = `900 ${Math.max(8, f.r * 0.35)}px system-ui`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText('CRATE', f.x, f.y + f.r + 6);
           ctx.restore();
           continue;
         }
         if (f.kind === 'gem') {
+          ctx.save();
+          ctx.shadowColor = 'rgba(98,185,255,.35)';
+          ctx.shadowBlur = 10;
           drawCircle(f.x, f.y, f.r, '#70dcff', gemImg);
+          ctx.strokeStyle = 'rgba(255,255,255,.45)';
+          ctx.lineWidth = Math.max(1, f.r * 0.08);
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r + 1.5, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
           continue;
         }
         ctx.beginPath();
@@ -1524,22 +1665,33 @@
         ctx.save();
         ctx.globalAlpha = bot.alpha;
 
-        const c = bot.r > player.r ? '#ff5e5e' : '#58ff72';
+        const edible = bot.r < player.r;
+        const c = edible ? '#58ff72' : '#ff5e5e';
+        const outline = edible ? 'rgba(88,255,114,.95)' : 'rgba(255,94,94,.95)';
+
         drawCircle(bot.x, bot.y, bot.r * bot.scale, c, botIconImage);
+
+        ctx.save();
+        ctx.lineWidth = Math.max(2.5, bot.r * 0.08);
+        ctx.strokeStyle = outline;
+        ctx.beginPath();
+        ctx.arc(bot.x, bot.y, bot.r * bot.scale + 3, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
 
         const label = bot.name || 'BOT';
         const fontSize = Math.max(10, Math.min(18, bot.r * 0.12));
-        ctx.font = `${fontSize}px system-ui`;
+        ctx.font = `900 ${fontSize}px system-ui`;
         const textW = ctx.measureText(label).width;
-        const boxW = textW + 12;
-        const boxH = fontSize + 8;
+        const boxW = textW + 14;
+        const boxH = fontSize + 10;
         const boxX = bot.x - boxW / 2;
-        const boxY = bot.y - bot.r * 0.95 - boxH;
+        const boxY = bot.y - bot.r * 1.05 - boxH;
 
-        ctx.fillStyle = 'rgba(0,0,0,.38)';
+        ctx.fillStyle = 'rgba(0,0,0,.42)';
         ctx.fillRect(boxX, boxY, boxW, boxH);
-
-        ctx.strokeStyle = 'rgba(255,255,255,.14)';
+        ctx.strokeStyle = outline;
+        ctx.lineWidth = 1.5;
         ctx.strokeRect(boxX, boxY, boxW, boxH);
 
         ctx.fillStyle = '#ffffff';
@@ -1548,7 +1700,7 @@
         ctx.fillText(label, bot.x, boxY + boxH / 2 + 0.5);
 
         ctx.fillStyle = c;
-        ctx.font = `${Math.max(10, Math.min(18, bot.r * 0.18))}px system-ui`;
+        ctx.font = `900 ${Math.max(10, Math.min(18, bot.r * 0.18))}px system-ui`;
         ctx.fillText(Math.floor(bot.r), bot.x, bot.y - bot.r * 0.55);
 
         if (debugEnabled) {
@@ -1595,21 +1747,6 @@
           ctx.lineWidth = 2;
           ctx.stroke();
           ctx.restore();
-        } else if (e.explode) {
-          ctx.save();
-          ctx.globalAlpha = clamp(e.life / 8, 0, 1);
-          ctx.beginPath();
-          ctx.arc(e.x, e.y, e.r + (8 - e.life) * 0.3, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.fill();
-          ctx.restore();
-          ctx.save();
-          ctx.fillStyle = '#000';
-          ctx.font = 'bold 14px system-ui';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(Math.max(0, Math.ceil(e.life / 60)), e.x, e.y);
-          ctx.restore();
         } else {
           ctx.save();
           ctx.globalAlpha = clamp(e.life / 28, 0, 1);
@@ -1640,7 +1777,7 @@
 
       cam.x += (player.x - cam.x) * 0.08;
       cam.y += (player.y - cam.y) * 0.08;
-      const targetZoom = clamp(1.35 - Math.log10(player.r + 1) * 0.22, 0.04, 1.35);
+      const targetZoom = Math.max(0.01, 1.7 - Math.log10(player.r + 1) * 0.30);
       cam.zoom += (targetZoom - cam.zoom) * 0.08;
 
       ctx.save();
@@ -1709,6 +1846,8 @@
       refreshUpgradeUI();
       syncIconPreviews();
       worldReadyAt = performance.now() + 5000;
+      nextCrateSpawnAt = performance.now() + 120000;
+      spawnTimedCrate(true);
     }
 
     function retryGame() {
@@ -1716,6 +1855,23 @@
         beginRun();
         saveMoney();
       });
+    }
+
+    function resetAllSaveData() {
+      localStorage.removeItem(MONEY_KEY);
+      localStorage.removeItem(UPGRADE_KEY);
+      localStorage.removeItem(ICON_KEY);
+      money = 0;
+      upgrades = { ...DEFAULT_UPGRADES };
+      iconState = { ...DEFAULT_ICON_STATE };
+      customIcons = { player: null, bot: null };
+      playerIconImage = null;
+      botIconImage = null;
+      saveMoney();
+      refreshUpgradeUI();
+      syncIconPreviews();
+      updateShopPreview();
+      toast('Save reset', 'blue', 1800);
     }
 
     function openRedeem() {
@@ -1733,6 +1889,13 @@
       uiBody.classList.toggle('collapsed');
     }
 
+    function updateCrateTimer(now) {
+      while (now >= nextCrateSpawnAt) {
+        spawnTimedCrate(false);
+        nextCrateSpawnAt += 120000;
+      }
+    }
+
     function updateWaveTimer(now) {
       if (now >= waveRaidNextTime) {
         spawnRaidWave();
@@ -1744,6 +1907,7 @@
       updateFPS(now);
       if (gameState === 'play') {
         updateWaveTimer(now);
+        updateCrateTimer(now);
         updateWorld();
       }
       drawWorld();
@@ -1760,12 +1924,20 @@
     sprintBtn.addEventListener('click', () => toggleSprint());
     retryBtn.addEventListener('click', retryGame);
     redeemBtn.addEventListener('click', openRedeem);
+    resetSaveBtn.addEventListener('click', () => {
+      resetAllSaveData();
+      retryGame();
+    });
     closeRedeemBtn.addEventListener('click', closeRedeem);
     itemInput.addEventListener('input', updateShopPreview);
     buyBtn.addEventListener('click', buySelectedItem);
     upStarterBtn.addEventListener('click', () => buyUpgrade('starterSize', 40));
     upSpeedBtn.addEventListener('click', () => buyUpgrade('speed', 45));
     upMagnetBtn.addEventListener('click', () => buyUpgrade('magnet', 35));
+    upBotsBtn.addEventListener('click', () => buyUpgrade('bots', 60));
+    upDropletsBtn.addEventListener('click', () => buyUpgrade('droplets', 55));
+    upGemsBtn.addEventListener('click', () => buyUpgrade('gems', 65));
+    upFuelBtn.addEventListener('click', () => buyUpgrade('fuel', 50));
     saveIconsBtn.addEventListener('click', saveIcons);
     resetIconsBtn.addEventListener('click', resetIcons);
 
@@ -1837,6 +2009,11 @@
         joy.y = 0;
         joyStick.style.transform = 'translate(0px, 0px)';
       });
+    }
+
+    function computePriceAndSaveButtonState() {
+      updateShopPreview();
+      refreshUpgradeUI();
     }
 
     function loadAllAndStart() {
