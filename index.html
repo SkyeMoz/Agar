@@ -78,7 +78,7 @@
       display:flex;
       align-items:center;
     }
-    #menuBtn,#f3Btn,#sprintBtn,#speedModeBtn,#killBtn,#zoomInBtn,#zoomOutBtn{
+    #hideBtn,#pauseBtn,#f3Btn,#sprintBtn,#speedModeBtn,#killBtn,#zoomInBtn,#zoomOutBtn{
       border:1px solid rgba(255,255,255,.12);
       background:rgba(255,255,255,.06);
       color:var(--text);
@@ -88,8 +88,8 @@
       cursor:pointer;
       touch-action:manipulation;
     }
-    #menuBtn{
-      min-width:72px;
+    #hideBtn,#pauseBtn{
+      min-width:78px;
       text-align:center;
     }
     #speedModeBtn{
@@ -198,7 +198,7 @@
     #toastWrap{
       position:fixed;
       right:12px;
-      top:calc(12px + env(safe-area-inset-top, 0px));
+      bottom:calc(12px + env(safe-area-inset-bottom, 0px));
       z-index:70;
       display:flex;
       flex-direction:column;
@@ -556,6 +556,48 @@
       flex-wrap:wrap;
       margin-top:10px;
     }
+
+    .settingsGrid{
+      display:grid;
+      gap:10px;
+      grid-template-columns:1fr 1fr;
+      margin-top:10px;
+    }
+    .settingCard{
+      border-radius:18px;
+      padding:12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      text-align:left;
+    }
+    .settingCard .menuLabel{
+      margin-top:0;
+      margin-bottom:8px;
+    }
+    .rangeRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .rangeRow input[type="range"]{
+      width:100%;
+    }
+    .settingToggle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+      margin-top:8px;
+    }
+    .settingToggle input{
+      width:20px;
+      height:20px;
+      accent-color:var(--accent);
+    }
     .pauseHint{
       font-size:12px;
       color:var(--muted);
@@ -615,7 +657,8 @@
     <div id="uiTop">
       <b id="titleLabel"><span id="activeBadge">1.0.1</span></b>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button id="menuBtn" type="button">Pause</button>
+        <button id="hideBtn" type="button">Hide</button>
+        <button id="pauseBtn" type="button">Pause</button>
         <button id="f3Btn" type="button">F3</button>
         <button id="killBtn" type="button">☠</button>
       </div>
@@ -642,11 +685,9 @@
 
   <div id="toastWrap"></div>
   <div id="moneyMiniHud" aria-hidden="true">
-    <div id="moneyMiniTop"><b>🟡</b><span id="moneyMiniValue">🟡 0</span></div>
+    <div id="moneyMiniTop"><b>🟡</b><span id="moneyMiniValue">0</span></div>
   </div>
   <div id="hudStack" aria-hidden="true">
-    <button id="sprintBtn" class="playOnly" type="button">Fuel</button>
-    <button id="speedModeBtn" class="playOnly" type="button">KPH</button>
     <div id="zoomControls" aria-hidden="true">
       <button id="zoomInBtn" type="button" aria-label="Zoom out">+</button>
       <button id="zoomOutBtn" type="button" aria-label="Zoom in">-</button>
@@ -803,22 +844,22 @@
 
   <div id="redeemOverlay" class="overlay">
     <div class="card">
-      <h2>Redeem</h2>
-      <p>Enter a UID from your shop manifest.</p>
-      <div class="menuLabel">Enter UID.</div>
+      <h2>R</h2>
+      <p>Redeem:</p>
+      <div class="menuLabel">Enter UIID from the shop to buy the mod!</div>
       <input id="itemInput" class="menuField" type="text" placeholder="example_uid" autocomplete="off" />
-      <div id="itemStatus" class="statusBox">Enter a UID to check price and file.</div>
+      <div id="itemStatus" class="statusBox">Enter UIID from the shop to buy the mod!</div>
       <div class="row" style="margin-top:12px;">
         <button id="buyBtn" type="button" class="buyBad">Buy</button>
         <button id="closeRedeemBtn" type="button" class="ghost">Close</button>
       </div>
 
       <div class="section">
-        <h2 style="font-size:18px;margin-bottom:6px;">Cheat Code</h2>
-        <p style="margin-bottom:10px;">Redeem coins with codes from settings/cheat/manifest.json.</p>
-        <div class="menuLabel">Enter cheat code.</div>
+        <h2 style="font-size:18px;margin-bottom:6px;">Cheat Code:</h2>
+        <p style="margin-bottom:10px;">Want to know cheat codes? go to our discord server! 7ttb8nDZg</p>
+        <div class="menuLabel">?</div>
         <input id="cheatInput" class="menuField" type="text" placeholder="SkyeMoz" autocomplete="off" />
-        <div id="cheatStatus" class="statusBox">Enter a cheat code to claim coins.</div>
+        <div id="cheatStatus" class="statusBox">Want to know cheat codes? go to our discord server! 7ttb8nDZg</div>
         <div class="row" style="margin-top:12px;">
           <button id="cheatRedeemBtn" type="button" class="buyGood">Redeem Coins</button>
           <button id="cheatCloseBtn" type="button" class="ghost">Close</button>
@@ -828,15 +869,47 @@
   </div>
 
 
+
+  <div id="settingsOverlay" class="overlay">
+    <div class="card">
+      <h2>Settings</h2>
+      <p>Sound sliders, HUD toggles, and gameplay helpers.</p>
+
+      <div class="settingsGrid" id="soundSettingsGrid"></div>
+
+      <div class="section">
+        <h2 style="font-size:18px;margin-bottom:6px;">Display</h2>
+        <div class="settingToggle"><span>Show F3 debug panel</span><input id="toggleDebug" type="checkbox" /></div>
+        <div class="settingToggle"><span>Show zoom buttons in gameplay</span><input id="toggleZoom" type="checkbox" /></div>
+        <div class="settingToggle"><span>Show Fuel button in gameplay</span><input id="toggleFuel" type="checkbox" /></div>
+        <div class="settingToggle"><span>Show Speed mode button</span><input id="toggleSpeed" type="checkbox" /></div>
+        <div class="settingToggle"><span>Show money HUD</span><input id="toggleMoney" type="checkbox" /></div>
+      </div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="saveSettingsBtn" type="button">Save Settings</button>
+        <button id="closeSettingsBtn" type="button" class="ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+
   <div id="pauseOverlay" class="overlay">
     <div class="card">
-      <h2>Paused</h2>
+      <h2>Pause</h2>
       <p id="pauseText">Game paused. Resume or manage your save.</p>
       <div class="row">
         <button id="pauseResumeBtn" type="button">Resume</button>
-        <button id="pauseResetBtn" type="button" class="ghost">Reset</button>
+        <button id="pauseUpgradesBtn" type="button" class="ghost">Upgrades</button>
       </div>
-      <button id="pauseRedeemBtn" type="button" class="buyGood" style="width:100%;margin-top:10px;">Redemption</button>
+      <div class="row" style="margin-top:10px;">
+        <button id="pauseSettingsBtn" type="button" class="ghost">Settings</button>
+        <button id="pauseEditorBtn" type="button" class="ghost">Editor</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button id="pauseResetBtn" type="button" class="buyBad">Reset</button>
+        <button id="pauseRedeemBtn" type="button" class="buyGood">Redemption</button>
+      </div>
       <div class="pauseHint">Drag the top bar to move the HUD.</div>
     </div>
   </div>
@@ -870,7 +943,8 @@
     const uiFill = document.getElementById('fill');
     const uiStaminaFill = document.getElementById('staminaFill');
     const uiBody = document.getElementById('uiBody');
-    const menuBtn = document.getElementById('menuBtn');
+    const hideBtn = document.getElementById('hideBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
     const debugPanel = document.getElementById('debugPanel');
     const debugInfo = document.getElementById('debugInfo');
     const f3Btn = document.getElementById('f3Btn');
@@ -884,9 +958,13 @@
     const zoomOutBtn = document.getElementById('zoomOutBtn');
 
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const settingsOverlay = document.getElementById('settingsOverlay');
     const pauseOverlay = document.getElementById('pauseOverlay');
     const loadingText = document.getElementById('loadingText');
     const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+    const pauseUpgradesBtn = document.getElementById('pauseUpgradesBtn');
+    const pauseSettingsBtn = document.getElementById('pauseSettingsBtn');
+    const pauseEditorBtn = document.getElementById('pauseEditorBtn');
     const pauseResetBtn = document.getElementById('pauseResetBtn');
     const pauseRedeemBtn = document.getElementById('pauseRedeemBtn');
     const gameOverOverlay = document.getElementById('gameOverOverlay');
@@ -949,6 +1027,15 @@
     const cheatRedeemBtn = document.getElementById('cheatRedeemBtn');
     const cheatCloseBtn = document.getElementById('cheatCloseBtn');
 
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const soundSettingsGrid = document.getElementById('soundSettingsGrid');
+    const toggleDebug = document.getElementById('toggleDebug');
+    const toggleZoom = document.getElementById('toggleZoom');
+    const toggleFuel = document.getElementById('toggleFuel');
+    const toggleSpeed = document.getElementById('toggleSpeed');
+    const toggleMoney = document.getElementById('toggleMoney');
+
     const toastWrap = document.getElementById('toastWrap');
     const joyBase = document.getElementById('joyBase');
     const joyStick = document.getElementById('joyStick');
@@ -956,6 +1043,8 @@
     const MONEY_KEY = 'circleio_money_v13';
     const ICON_KEY = 'circleio_icons_v13';
     const SOUND_KEY = 'circleio_sounds_v13';
+    const SOUND_VOLUME_KEY = 'circleio_sound_volume_v13';
+    const UI_PREFS_KEY = 'circleio_ui_prefs_v13';
     const NAME_KEY = 'circleio_name_v13';
     const UPGRADE_KEY = 'circleio_upgrades_v13';
     const CHEAT_REDEEMED_KEY = 'circleio_cheat_redeemed_v13';
@@ -1069,8 +1158,10 @@
         if (!source) return;
         const clone = new Audio(source);
         clone.preload = 'auto';
-        clone.volume = volume;
-        clone.play().catch(() => {});
+        clone.volume = clamp(volume, 0, 1);
+        clone.playsInline = true;
+        const p = clone.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
       } catch {}
     }
     function saveMoney() {
@@ -1112,7 +1203,9 @@
 
     function playPositionalSound(audio, x = 0, y = 0, range = 1200) {
       try {
-        playFreshAudio(audio, 0.35);
+        const key = audio?.dataset?.soundKey || 'buy';
+        const vol = soundVolumes[key] ?? 0.35;
+        playFreshAudio(audio, vol);
       } catch {}
     }
 
@@ -1181,6 +1274,8 @@
     playerNameInput.value = playerName;
 
     let soundSources = { ...DEFAULT_SOUND_SOURCES, ...loadJson(SOUND_KEY, {}) };
+    let soundVolumes = { eat: .38, kill: .40, buy: .38, error: .40, click: .28, power: .38, ...loadJson(SOUND_VOLUME_KEY, {}) };
+    let uiPrefs = { showDebug: false, showZoom: true, showFuel: true, showSpeed: true, showMoney: true, ...loadJson(UI_PREFS_KEY, {}) };
     let sounds = { eat: null, kill: null, buy: null, error: null, click: null, power: null };
 
     let playerIconImage = null;
@@ -1228,6 +1323,7 @@
     let uiDrag = { active: false, offsetX: 0, offsetY: 0 };
     let pauseReturnState = 'play';
     let redeemReturnState = 'play';
+    let gameOverMode = 'dead';
 
 
     function sanitizeUpgrades(raw = {}) {
@@ -1289,9 +1385,10 @@
       sounds.error = new Audio(soundSources.error || DEFAULT_SOUND_SOURCES.error);
       sounds.click = new Audio(soundSources.click || DEFAULT_SOUND_SOURCES.click);
       sounds.power = new Audio(soundSources.power || DEFAULT_SOUND_SOURCES.power);
-      Object.values(sounds).forEach(a => {
+      Object.entries(sounds).forEach(([key, a]) => {
         if (a) {
           a.preload = 'auto';
+          a.dataset.soundKey = key;
           a.load?.();
         }
       });
@@ -1307,6 +1404,78 @@
       localStorage.removeItem(SOUND_KEY);
       initSounds();
       toast('Sounds reset', 'blue', 1400);
+    }
+
+    function saveSoundVolumes() {
+      saveJson(SOUND_VOLUME_KEY, soundVolumes);
+    }
+
+    function loadUIPrefs() {
+      toggleDebug.checked = !!uiPrefs.showDebug;
+      toggleZoom.checked = uiPrefs.showZoom !== false;
+      toggleFuel.checked = uiPrefs.showFuel !== false;
+      toggleSpeed.checked = uiPrefs.showSpeed !== false;
+      toggleMoney.checked = uiPrefs.showMoney !== false;
+    }
+
+    function saveUIPrefs() {
+      uiPrefs = {
+        showDebug: !!toggleDebug.checked,
+        showZoom: !!toggleZoom.checked,
+        showFuel: !!toggleFuel.checked,
+        showSpeed: !!toggleSpeed.checked,
+        showMoney: !!toggleMoney.checked
+      };
+      saveJson(UI_PREFS_KEY, uiPrefs);
+      syncGameplayControls();
+      updateDebug();
+      toast('Settings saved', 'good', 1400);
+    }
+
+    function buildSoundSettingsUI() {
+      const rows = [
+        ['eat', 'Eat sound'],
+        ['kill', 'Kill sound'],
+        ['buy', 'Buy sound'],
+        ['error', 'Error sound'],
+        ['click', 'Click sound'],
+        ['power', 'Power sound']
+      ];
+      soundSettingsGrid.innerHTML = rows.map(([key, label]) => `
+        <div class="settingCard">
+          <div class="menuLabel">${label}</div>
+          <div class="rangeRow">
+            <input type="range" min="0" max="100" value="${Math.round((soundVolumes[key] ?? 0.35) * 100)}" data-sound="${key}">
+            <span data-vol="${key}" style="min-width:42px;text-align:right;font-weight:800;color:#ffd66b;">${Math.round((soundVolumes[key] ?? 0.35) * 100)}%</span>
+          </div>
+        </div>
+      `).join('');
+      soundSettingsGrid.querySelectorAll('input[type="range"]').forEach(slider => {
+        slider.addEventListener('input', () => {
+          const key = slider.dataset.sound;
+          const v = Math.max(0, Math.min(100, Number(slider.value) || 0)) / 100;
+          soundVolumes[key] = v;
+          const out = soundSettingsGrid.querySelector(`[data-vol="${key}"]`);
+          if (out) out.textContent = `${Math.round(v * 100)}%`;
+        });
+      });
+    }
+
+    function openSettings() {
+      pauseOverlay.style.display = 'none';
+      gameOverOverlay.style.display = 'none';
+      redeemOverlay.style.display = 'none';
+      settingsOverlay.style.display = 'flex';
+      loadUIPrefs();
+      buildSoundSettingsUI();
+      syncGameplayControls();
+    }
+
+    function closeSettings() {
+      settingsOverlay.style.display = 'none';
+      if (gameState === 'paused') pauseOverlay.style.display = 'flex';
+      else if (gameState === 'dead') gameOverOverlay.style.display = 'flex';
+      syncGameplayControls();
     }
 
     function setSoundFromInput(name, file) {
@@ -1967,7 +2136,11 @@
       const speed = getPlayerSpeed();
       player.speed = speed;
 
-      if (player.sprinting && player.stamina > 0) {
+      const keyboardMoving = !!(keys['w'] || keys['arrowup'] || keys['s'] || keys['arrowdown'] || keys['a'] || keys['arrowleft'] || keys['d'] || keys['arrowright']);
+      const joystickMoving = joy.active && (Math.abs(joy.x) > 0.03 || Math.abs(joy.y) > 0.03);
+      const isMoving = keyboardMoving || joystickMoving;
+
+      if (player.sprinting && player.stamina > 0 && isMoving) {
         const drain = clamp(0.95 + player.r * 0.015, 0.9, 2.0);
         player.stamina = Math.max(0, player.stamina - drain);
         if (player.stamina <= 0) {
@@ -2517,7 +2690,7 @@
     }
 
     function updateDebug() {
-      if (!debugEnabled) {
+      if (!debugEnabled || !uiPrefs.showDebug) {
         debugPanel.style.display = 'none';
         return;
       }
@@ -2560,7 +2733,8 @@
       uiNextRaid.textContent = formatCountdown(waveRaidNextTime - now);
       uiFill.style.width = `${levelProgress() * 100}%`;
       uiStaminaFill.style.width = `${clamp(player.stamina / Math.max(1, player.maxStamina), 0, 1) * 100}%`;
-      moneyMiniValue.textContent = `🟡 ${Math.floor(money).toString()}`;
+      moneyMiniValue.textContent = `${Math.floor(money).toString()}`;
+      if (typeof hideBtn !== 'undefined') hideBtn.textContent = uiBody.classList.contains('collapsed') ? 'Unhide' : 'Hide';
       sprintBtn.textContent = player.sprinting ? 'Fuel ON' : 'Fuel';
       sprintBtn.classList.toggle('on', player.sprinting);
       updateSpeedModeUI();
@@ -2607,6 +2781,8 @@
       localStorage.removeItem(EDITOR_KEY);
       localStorage.removeItem(CHEAT_REDEEMED_KEY);
       localStorage.removeItem(SPEED_MODE_KEY);
+      localStorage.removeItem(SOUND_VOLUME_KEY);
+      localStorage.removeItem(UI_PREFS_KEY);
       money = 0;
       upgrades = { ...DEFAULT_UPGRADES };
       upgrades = sanitizeUpgrades(upgrades);
@@ -2646,10 +2822,10 @@
 
     function syncGameplayControls() {
       const inGameplay = gameState === 'play';
-      sprintBtn.style.display = inGameplay ? '' : 'none';
-      speedModeBtn.style.display = inGameplay ? '' : 'none';
-      zoomControls.style.display = inGameplay ? 'flex' : 'none';
-      moneyMiniHud.style.display = inGameplay ? 'block' : 'none';
+      sprintBtn.style.display = inGameplay && uiPrefs.showFuel !== false ? '' : 'none';
+      speedModeBtn.style.display = inGameplay && uiPrefs.showSpeed !== false ? '' : 'none';
+      zoomControls.style.display = inGameplay && uiPrefs.showZoom !== false ? 'flex' : 'none';
+      moneyMiniHud.style.display = inGameplay && uiPrefs.showMoney !== false ? 'block' : 'none';
       ui.classList.toggle('paused', gameState === 'paused');
       ui.classList.toggle('dragging', uiDrag.active);
       updateSpeedModeUI();
@@ -2698,6 +2874,7 @@
       gameState = 'paused';
       pauseOverlay.style.display = 'flex';
       redeemOverlay.style.display = 'none';
+      settingsOverlay.style.display = 'none';
       gameOverOverlay.style.display = 'none';
       syncGameplayControls();
     }
@@ -2705,6 +2882,7 @@
       if (gameState !== 'paused') return;
       pauseOverlay.style.display = 'none';
       redeemOverlay.style.display = 'none';
+      settingsOverlay.style.display = 'none';
       gameState = pauseReturnState === 'dead' ? 'dead' : 'play';
       if (gameState === 'dead') {
         gameOverOverlay.style.display = 'flex';
@@ -2714,6 +2892,30 @@
     function togglePause() {
       if (gameState === 'play') openPause();
       else if (gameState === 'paused') closePause();
+    }
+
+    function openUpgradePanel() {
+      if (gameState !== 'paused') openPause();
+      gameOverMode = 'upgrades';
+      gameOverOverlay.style.display = 'flex';
+      gameOverText.textContent = 'Manage upgrades, editor, and sounds.';
+      const h2 = gameOverOverlay.querySelector('.card > h2');
+      if (h2) h2.textContent = 'Upgrades';
+    }
+
+    function closeUpgradePanel() {
+      if (gameOverMode !== 'upgrades') return;
+      gameOverOverlay.style.display = 'none';
+      const h2 = gameOverOverlay.querySelector('.card > h2');
+      if (h2) h2.textContent = 'You died';
+      gameOverText.textContent = 'Try again and grow bigger.';
+      if (gameState === 'paused') pauseOverlay.style.display = 'flex';
+    }
+
+    function openEditorPanel() {
+      openUpgradePanel();
+      const editorSection = document.getElementById('saveEditorBtn')?.closest('.section');
+      editorSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function adjustZoom(step) {
@@ -2732,6 +2934,9 @@
     }
     function openDeathMenu() {
       gameState = 'dead';
+      gameOverMode = 'dead';
+      const h2 = gameOverOverlay.querySelector('.card > h2');
+      if (h2) h2.textContent = 'You died';
       gameOverText.textContent = `Level ${level} • Money ${Math.floor(money)} saved`;
       gameOverOverlay.style.display = 'flex';
     }
@@ -2766,7 +2971,12 @@
       requestAnimationFrame(gameLoop);
     }
 
-    menuBtn.addEventListener('click', togglePause);
+    hideBtn.addEventListener('click', () => {
+      uiBody.classList.toggle('collapsed');
+      ui.classList.toggle('collapsed', uiBody.classList.contains('collapsed'));
+      updateHUD();
+    });
+    pauseBtn.addEventListener('click', togglePause);
     f3Btn.addEventListener('click', () => { debugEnabled = !debugEnabled; updateDebug(); });
     sprintBtn.addEventListener('click', () => toggleSprint());
     speedModeBtn.addEventListener('click', toggleSpeedMode);
@@ -2775,6 +2985,9 @@
     redeemBtn.addEventListener('click', () => openRedeem('dead'));
     resetSaveBtn.addEventListener('click', () => { resetAllSaveData(); retryGame(); });
     pauseResumeBtn.addEventListener('click', closePause);
+    pauseUpgradesBtn.addEventListener('click', openUpgradePanel);
+    pauseSettingsBtn.addEventListener('click', openSettings);
+    pauseEditorBtn.addEventListener('click', openEditorPanel);
     pauseResetBtn.addEventListener('click', () => { closePause(); resetAllSaveData(); retryGame(); });
     pauseRedeemBtn.addEventListener('click', () => openRedeem('paused'));
     closeRedeemBtn.addEventListener('click', closeRedeem);
@@ -2809,11 +3022,16 @@
     refundCoinsBtn.addEventListener('click', () => refundUpgrade('coins'));
     saveIconsBtn.addEventListener('click', saveIcons);
     resetIconsBtn.addEventListener('click', resetIcons);
-    saveSoundsBtn.addEventListener('click', saveSounds);
-    resetSoundsBtn.addEventListener('click', resetSounds);
+    saveSoundsBtn.addEventListener('click', () => { saveSounds(); saveSoundVolumes(); });
+    resetSoundsBtn.addEventListener('click', () => { resetSounds(); });
     saveEditorBtn.addEventListener('click', saveEditor);
     resetEditorBtn.addEventListener('click', resetEditor);
+    saveSettingsBtn.addEventListener('click', () => { saveSoundVolumes(); saveUIPrefs(); closeSettings(); });
+    closeSettingsBtn.addEventListener('click', () => { saveSoundVolumes(); saveUIPrefs(); closeSettings(); });
+    toggleDebug.addEventListener('change', updateDebug);
     syncInputThemeLive();
+    buildSoundSettingsUI();
+    loadUIPrefs();
 
     const bindHoldZoom = (btn, step) => {
       let activePointer = null;
@@ -2908,6 +3126,8 @@
       }
       if (e.key === 'Shift') toggleSprint(true);
       if (e.key === 'Escape' && redeemOverlay.style.display === 'flex') closeRedeem();
+      if (e.key === 'Escape' && settingsOverlay.style.display === 'flex') closeSettings();
+      if (e.key === 'Escape' && gameOverOverlay.style.display === 'flex' && gameOverMode === 'upgrades') closeUpgradePanel();
     }, { passive: false });
 
     document.addEventListener('keyup', e => {
@@ -3078,7 +3298,6 @@
       backgroundColorInput.addEventListener('input', applyLiveEditor);
     }
 
-    menuBtn.textContent = 'Pause';
     setupHudDrag();
     loadAllAndStart();
     requestAnimationFrame(gameLoop);
