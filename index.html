@@ -55,7 +55,7 @@
       z-index:30;
       width:min(860px,calc(100vw - 12px));
       min-width:0;
-      padding:10px 12px;
+      padding:8px 10px;
       border-radius:20px;
       background:rgba(15,15,22,.84);
       border:1px solid var(--stroke);
@@ -97,6 +97,7 @@
       text-align:center;
     }
     #killBtn{color:#ffd4d4}
+    #speedModeBtn,#killBtn{display:none !important;}
     #sprintBtn.on{
       background:rgba(98,185,255,.16);
       border-color:rgba(98,185,255,.4);
@@ -688,12 +689,12 @@
     <div id="uiBody">
       <div class="stat-row"><span>Level</span><span id="levelText">1</span></div>
       <div class="stat-row"><span>Size</span><span id="sizeText">10</span></div>
-      <div class="stat-row"><span>Money</span><span id="moneyText">0</span></div>
+      <div class="stat-row"><span>Money</span><span id="moneyText">🟡 0</span></div>
       <div class="stat-row"><span>Kills</span><span id="killText">0</span></div>
       <div class="stat-row"><span>Stamina</span><span id="sprintText">OFF</span></div>
       <div class="stat-row"><span>Fuel</span><span id="fuelText">100%</span></div>
       <div class="stat-row"><span>Speed</span><span id="speedText">0 KPH</span></div>
-      <div class="stat-row"><span>Next Raid</span><span id="nextRaidText">20:00</span></div>
+      <div class="stat-row"><span>Droplets</span><span id="dropletCountText">0/500</span></div>
       <div class="stat-row"><span>PowerLoot</span><span class="blue">Crate + Gem</span></div>
       <div id="barWrap"><div id="fill"></div></div>
       <div id="staminaWrap"><div id="staminaFill"></div></div>
@@ -703,11 +704,10 @@
 
   <div id="toastWrap"></div>
   <div id="moneyMiniHud" aria-hidden="true">
-    <div id="moneyMiniTop"><b>🟡</b><span id="moneyMiniValue">0</span></div>
+    <div id="moneyMiniTop"><b>Money</b><span id="moneyMiniValue">0</span></div>
   </div>
   <div id="hudStack" aria-hidden="true">
     <button id="sprintBtn" class="playOnly" type="button">Fuel</button>
-    <button id="speedModeBtn" class="playOnly" type="button">KPH</button>
     <div id="zoomControls" aria-hidden="true">
       <button id="zoomInBtn" type="button" aria-label="Zoom out">+</button>
       <button id="zoomOutBtn" type="button" aria-label="Zoom in">-</button>
@@ -715,7 +715,7 @@
   </div>
   <div id="joyBase" aria-hidden="true"><div id="joyStick"></div></div>
 
-  <div id="loadingOverlay" class="overlay">
+<div id="loadingOverlay" class="overlay">
     <div class="card">
       <h2>Loading...</h2>
       <p id="loadingText">Preparing the world.</p>
@@ -729,9 +729,6 @@
       <div class="row">
         <button id="deathCloseBtn" type="button" class="ghost">Close</button>
       </div>
-      <button id="resetSaveBtn" type="button" class="buyBad" style="width:100%;margin-top:10px;">Reset Save</button>
-
-
       <div class="section">
         <h2 style="font-size:18px;margin-bottom:6px;">Upgrade Mode</h2>
         <p style="margin-bottom:10px;">Buy upgrades here. Value and level are shown under each button.</p>
@@ -867,14 +864,8 @@
 
   <div id="redeemOverlay" class="overlay">
     <div class="card">
-      <h2>R</h2>
-      <p>
-        Redeem:<br><br>
-        Enter UIID from the shop to buy the mod!<br><br>
-        Cheat Code:<br><br>
-        Want to know cheat codes? go to our discord server! 7ttb8nDZg<br>
-        ?
-      </p>
+      <h2>Redemption</h2>
+      <p>Enter UIID from the shop to buy the mod!</p>
       <div class="menuLabel">Enter UID.</div>
       <input id="itemInput" class="menuField" type="text" placeholder="example_uid" autocomplete="off" />
       <div id="itemStatus" class="statusBox">Enter a UID to check price and file.</div>
@@ -885,7 +876,7 @@
 
       <div class="section">
         <h2 style="font-size:18px;margin-bottom:6px;">Cheat Code</h2>
-        <p style="margin-bottom:10px;">Redeem coins from settings/cheat/manifest.json. Redeemable once only.</p>
+        <p style="margin-bottom:10px;">Want to know cheat codes? go to our discord server! 7ttb8nDZg</p>
         <div class="menuLabel">Enter cheat code.</div>
         <input id="cheatInput" class="menuField" type="text" placeholder="SkyeMoz" autocomplete="off" />
         <div id="cheatStatus" class="statusBox">Enter a cheat code to claim coins.</div>
@@ -896,8 +887,6 @@
       </div>
     </div>
   </div>
-
-
 
   <div id="settingsOverlay" class="overlay">
     <div class="card">
@@ -932,9 +921,55 @@
         </div>
       </div>
 
+      <div class="section">
+        <h2 style="font-size:18px;margin-bottom:6px;">Gameplay</h2>
+        <div class="colorGrid">
+          <div>
+            <div class="menuLabel">Chunk load radius</div>
+            <input id="chunkRadiusInput" class="menuField" type="range" min="1" max="3" step="1" value="1" />
+          </div>
+          <div>
+            <div class="menuLabel">Player name position</div>
+            <select id="namePositionSelect" class="menuField">
+              <option value="top">Top</option>
+              <option value="center">Center</option>
+              <option value="below">Below</option>
+            </select>
+          </div>
+          <div>
+            <div class="menuLabel">Player name color</div>
+            <input id="nameColorInput" class="colorField" type="color" value="#ffffff" />
+          </div>
+          <div>
+            <div class="menuLabel">Name preview</div>
+            <div class="statusBox" id="namePreviewBox">Your name renders above the circle and scales with size.</div>
+          </div>
+        </div>
+      </div>
+
       <div class="row" style="margin-top:12px;">
         <button id="saveSettingsBtn" type="button">Save Settings</button>
         <button id="closeSettingsBtn" type="button" class="ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="statsOverlay" class="overlay">
+    <div class="card">
+      <h2>Stats</h2>
+      <p>Top score, raid counts, and more.</p>
+      <div class="statsGrid">
+        <div class="stat-row"><span>Top score</span><span id="statsTopScore">0</span></div>
+        <div class="stat-row"><span>Victory raid</span><span id="statsVictoryRaid">0</span></div>
+        <div class="stat-row"><span>All raids</span><span id="statsAllRaids">0</span></div>
+        <div class="stat-row"><span>Best level</span><span id="statsBestLevel">1</span></div>
+        <div class="stat-row"><span>Foods eaten</span><span id="statsFoodsEaten">0</span></div>
+        <div class="stat-row"><span>Profile level</span><span id="statsProfileLevel">1</span></div>
+        <div class="stat-row"><span>Next raid</span><span id="statsNextRaid">00:00</span></div>
+        <div class="stat-row"><span>Money</span><span id="statsMoney">🟡 0</span></div>
+      </div>
+      <div class="row" style="margin-top:12px;">
+        <button id="statsCloseBtn" type="button" class="ghost">Close</button>
       </div>
     </div>
   </div>
@@ -945,7 +980,7 @@
       <p id="pauseText">Game paused. Resume or manage your save.</p>
       <div class="row">
         <button id="pauseResumeBtn" type="button">Resume</button>
-        <button id="pauseResetBtn" type="button" class="ghost">Reset</button>
+        <button id="pauseResetBtn" type="button" class="ghost">Retry</button>
       </div>
       <div class="row" style="margin-top:10px;">
         <button id="pauseRedeemBtn" type="button" class="buyGood">Redemption</button>
@@ -953,13 +988,16 @@
       </div>
       <div class="row" style="margin-top:10px;">
         <button id="pauseEditorBtn" type="button" class="ghost">Editor</button>
+        <button id="pauseStatsBtn" type="button" class="ghost">Stats</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
         <button id="pauseSettingsBtn" type="button" class="ghost">Settings</button>
+        <button id="pauseCloseBtn" type="button" class="ghost">Close</button>
       </div>
       <div class="pauseHint">Drag the top bar to move the HUD.</div>
     </div>
   </div>
-
-  <canvas id="game"></canvas>
+<canvas id="game"></canvas>
 
   <script>
   (() => {
@@ -984,7 +1022,7 @@
     const uiKills = document.getElementById('killText');
     const uiSprint = document.getElementById('sprintText');
     const uiFuel = document.getElementById('fuelText');
-    const uiNextRaid = document.getElementById('nextRaidText');
+    const uiDroplets = document.getElementById('dropletCountText');
     const uiFill = document.getElementById('fill');
     const uiStaminaFill = document.getElementById('staminaFill');
     const uiBody = document.getElementById('uiBody');
@@ -1015,6 +1053,20 @@
     const pauseUpgradesBtn = document.getElementById('pauseUpgradesBtn');
     const pauseEditorBtn = document.getElementById('pauseEditorBtn');
     const pauseSettingsBtn = document.getElementById('pauseSettingsBtn');
+    const pauseCloseBtn = document.getElementById('pauseCloseBtn');
+    const statsOverlay = document.getElementById('statsOverlay');
+    const statsTopScore = document.getElementById('statsTopScore');
+    const statsVictoryRaid = document.getElementById('statsVictoryRaid');
+    const statsAllRaids = document.getElementById('statsAllRaids');
+    const statsBestLevel = document.getElementById('statsBestLevel');
+    const statsFoodsEaten = document.getElementById('statsFoodsEaten');
+    const statsProfileLevel = document.getElementById('statsProfileLevel');
+    const statsNextRaid = document.getElementById('statsNextRaid');
+    const statsMoney = document.getElementById('statsMoney');
+    const statsCloseBtn = document.getElementById('statsCloseBtn');
+    const chunkRadiusInput = document.getElementById('chunkRadiusInput');
+    const namePositionSelect = document.getElementById('namePositionSelect');
+    const nameColorInput = document.getElementById('nameColorInput');
     const gameOverOverlay = document.getElementById('gameOverOverlay');
     const gameOverTitle = document.getElementById('gameOverTitle');
     const gameOverText = document.getElementById('gameOverText');
@@ -1105,6 +1157,8 @@
     const UPGRADE_KEY = 'circleio_upgrades_v13';
     const CHEAT_REDEEMED_KEY = 'circleio_cheat_redeemed_v13';
     const SPEED_MODE_KEY = 'circleio_speed_mode_v13';
+    const PROFILE_LEVEL_KEY = 'circleio_profile_level_v13';
+    const STATS_KEY = 'circleio_stats_v13';
     const SETTINGS_KEY = 'circleio_settings_v13';
     const SHOP_MANIFEST_URL = 'shop/manifest.json';
     const CHEAT_MANIFEST_URL = 'settings/cheat/manifest.json';
@@ -1358,6 +1412,57 @@
       return 3;
     }
 
+
+    function getChunkLoadRadius() {
+      return clamp(Number(settingsState.gameplay?.chunkLoadRadius || 1), 1, 3);
+    }
+    function getNamePosition() {
+      return settingsState.gameplay?.namePosition || 'top';
+    }
+    function getNameColor() {
+      return settingsState.gameplay?.nameColor || '#ffffff';
+    }
+    function getUpgradeMax(key) {
+      const base = UPGRADE_CONFIG[key]?.max ?? 0;
+      return Math.max(base, Math.floor(base * Math.pow(2, Math.max(0, profileLevel - 1))));
+    }
+    function saveStats() {
+      statsState.profileLevel = profileLevel;
+      statsState.maxMoney = Math.max(statsState.maxMoney || 0, Math.floor(money));
+      localStorage.setItem(PROFILE_LEVEL_KEY, String(profileLevel));
+      saveJson(STATS_KEY, statsState);
+    }
+    function updateStatsOverlay() {
+      if (!statsOverlay) return;
+      if (statsTopScore) statsTopScore.textContent = String(Math.floor(statsState.topScore || 0));
+      if (statsVictoryRaid) statsVictoryRaid.textContent = String(Math.floor(statsState.victoryRaids || 0));
+      if (statsAllRaids) statsAllRaids.textContent = String(Math.floor(statsState.allRaids || 0));
+      if (statsBestLevel) statsBestLevel.textContent = String(Math.floor(statsState.bestLevel || 1));
+      if (statsFoodsEaten) statsFoodsEaten.textContent = String(Math.floor(statsState.foodsEaten || 0));
+      if (statsProfileLevel) statsProfileLevel.textContent = String(Math.floor(profileLevel || 1));
+      if (statsNextRaid) statsNextRaid.textContent = formatCountdown(waveRaidNextTime - performance.now());
+      if (statsMoney) statsMoney.textContent = `🟡 ${Math.floor(money)}`;
+    }
+    function openStats() {
+      pauseOverlay.style.display = 'none';
+      settingsOverlay.style.display = 'none';
+      gameOverOverlay.style.display = 'none';
+      redeemOverlay.style.display = 'none';
+      statsOverlay.style.display = 'flex';
+      gameState = gameState === 'dead' ? 'dead' : 'paused';
+      updateStatsOverlay();
+      syncGameplayControls();
+    }
+    function closeStats() {
+      statsOverlay.style.display = 'none';
+      if (gameState === 'dead') gameOverOverlay.style.display = 'flex';
+      else pauseOverlay.style.display = 'flex';
+      syncGameplayControls();
+    }
+    function scheduleNextRaid(now = performance.now()) {
+      waveRaidNextTime = now + (10 + Math.random() * 10) * 60 * 1000;
+    }
+
     let money = Number(localStorage.getItem(MONEY_KEY) || 0);
     let upgrades = { ...DEFAULT_UPGRADES, ...loadJson(UPGRADE_KEY, { ...DEFAULT_UPGRADES }) };
     let editorState = { ...DEFAULT_EDITOR_STATE, ...loadJson(EDITOR_KEY, { ...DEFAULT_EDITOR_STATE }) };
@@ -1404,9 +1509,11 @@
     let playerShield = 0;
     let targetBotCount = 18;
     let killCount = 0;
+    let dropletCount = 0;
+    let dropletNeed = 500;
     let lootIntensity = 1;
     let worldReadyAt = performance.now() + 5000;
-    let waveRaidNextTime = performance.now() + 20 * 60 * 1000;
+    let waveRaidNextTime = performance.now() + (10 + Math.random() * 10) * 60 * 1000;
     let nextCrateSpawnAt = performance.now() + 120000;
     let manifestLoaded = false;
     let speedMode = localStorage.getItem(SPEED_MODE_KEY) || 'kph';
@@ -1422,8 +1529,11 @@
         showDebugPanel: true,
         showNotifications: true,
         desktopMode: true
-      }
+      },
+      gameplay: { chunkLoadRadius: 1, namePosition: 'top', nameColor: '#ffffff' }
     };
+    let statsState = loadJson(STATS_KEY, { topScore: 0, victoryRaids: 0, allRaids: 0, bestLevel: 1, foodsEaten: 0, profileLevel: 1, maxMoney: 0 });
+    let profileLevel = Math.max(1, Number(localStorage.getItem(PROFILE_LEVEL_KEY) || statsState.profileLevel || 1));
     let uiDrag = { active: false, offsetX: 0, offsetY: 0 };
     let hudHidden = false;
     let pauseOpenMode = 'pause';
@@ -1562,12 +1672,23 @@
       ];
       items.forEach(({ el, key, name, base }) => {
         const val = upgrades[key];
-        const max = UPGRADE_CONFIG[key].max;
+        const max = getUpgradeMax(key);
         el.querySelector('.name').textContent = `UP ${name}`;
         el.querySelector('.value').textContent = `Value 🟡 ${upgradePrice(base, val)}`;
         el.querySelector('.level').textContent = `Lv ${val} / ${max}`;
       });
       upgradeNote.textContent = 'Starter size only applies when you retry. Refund gives back 75% of the last buy price.';
+    }
+
+    function normalizeSettingsState() {
+      settingsState.volumes = settingsState.volumes || {};
+      settingsState.toggles = settingsState.toggles || {};
+      settingsState.gameplay = {
+        chunkLoadRadius: clamp(Number(settingsState.gameplay?.chunkLoadRadius ?? 1), 1, 3),
+        namePosition: ['top', 'center', 'below'].includes(settingsState.gameplay?.namePosition) ? settingsState.gameplay.namePosition : 'top',
+        nameColor: /^#[0-9a-f]{6}$/i.test(settingsState.gameplay?.nameColor || '') ? settingsState.gameplay.nameColor : '#ffffff'
+      };
+      return settingsState;
     }
 
     function saveSettings() {
@@ -1591,16 +1712,24 @@
           showDebugPanel: !!showDebugToggle.checked,
           showNotifications: !!showNotificationsToggle.checked,
           desktopMode: !!desktopModeToggle.checked
+        },
+        gameplay: {
+          chunkLoadRadius: clamp(Number(chunkRadiusInput?.value || 1), 1, 3),
+          namePosition: namePositionSelect?.value || 'top',
+          nameColor: nameColorInput?.value || '#ffffff'
         }
       };
       saveJson(SETTINGS_KEY, settingsState);
       applySettings();
+      syncGameplayControls();
       toast('Settings saved', 'good', 1400);
     }
 
     function syncSettingsUI() {
+      normalizeSettingsState();
       const vols = settingsState.volumes || {};
       const toggles = settingsState.toggles || {};
+      const gameplay = settingsState.gameplay || {};
       masterVolume.value = vols.master ?? 100;
       eatVolume.value = vols.eat ?? 100;
       killVolume.value = vols.kill ?? 100;
@@ -1617,24 +1746,42 @@
       showDebugToggle.checked = toggles.showDebugPanel !== false;
       showNotificationsToggle.checked = toggles.showNotifications !== false;
       desktopModeToggle.checked = toggles.desktopMode !== false;
+      if (chunkRadiusInput) chunkRadiusInput.value = String(gameplay.chunkLoadRadius ?? 1);
+      if (namePositionSelect) namePositionSelect.value = gameplay.namePosition || 'top';
+      if (nameColorInput) nameColorInput.value = gameplay.nameColor || '#ffffff';
+    }
+
+    function bindSettingsLiveControls() {
+      const liveSave = () => saveSettings();
+      [masterVolume, eatVolume, killVolume, buyVolume, errorVolume, clickVolume, powerVolume, upgradeVolume, chunkRadiusInput, nameColorInput].forEach(el => {
+        if (!el) return;
+        el.addEventListener('input', liveSave);
+      });
+      [showHudToggle, showMoneyHudToggle, showZoomToggle, showFuelToggle, showSpeedToggle, showDebugToggle, showNotificationsToggle, desktopModeToggle, namePositionSelect].forEach(el => {
+        if (!el) return;
+        el.addEventListener('change', liveSave);
+      });
     }
 
     function applySettings() {
+      normalizeSettingsState();
       const t = settingsState.toggles || {};
-      ui.classList.toggle('hiddenHud', !t.showHud);
-      uiBody.style.display = t.showHud ? '' : 'none';
-      playerNameInput.style.display = t.showHud ? '' : 'none';
-      if (moneyMiniHud) moneyMiniHud.style.display = (gameState === 'play' && t.showMoneyHud !== false) ? 'block' : 'none';
+      const visible = t.showHud !== false && !hudHidden;
+      ui.classList.toggle('hiddenHud', !visible);
+      uiBody.style.display = visible ? '' : 'none';
+      playerNameInput.style.display = visible ? '' : 'none';
+      if (moneyMiniHud) moneyMiniHud.style.display = (gameState === 'play' && t.showMoneyHud !== false && visible) ? 'block' : 'none';
       if (zoomControls) zoomControls.style.display = (gameState === 'play' && t.showZoomControls !== false) ? 'flex' : 'none';
-      if (hudStack) hudStack.style.display = (gameState === 'play' && (t.showZoomControls !== false || t.showFuelButton !== false || t.showSpeedText !== false)) ? 'flex' : 'none';
+      if (hudStack) hudStack.style.display = (gameState === 'play' && (t.showZoomControls !== false || t.showFuelButton !== false)) ? 'flex' : 'none';
       if (sprintBtn) sprintBtn.style.display = (gameState === 'play' && t.showFuelButton !== false) ? '' : 'none';
-      if (speedModeBtn) speedModeBtn.style.display = (gameState === 'play' && t.showSpeedText !== false) ? '' : 'none';
+      if (speedModeBtn) speedModeBtn.style.display = 'none';
       if (debugPanel) debugPanel.style.display = (debugEnabled && t.showDebugPanel !== false) ? 'block' : 'none';
       if (toastWrap) toastWrap.style.display = t.showNotifications !== false ? 'flex' : 'none';
       document.body.classList.toggle('desktopMode', t.desktopMode !== false);
     }
 
     function openSettings() {
+
       syncSettingsUI();
       settingsOverlay.style.display = 'flex';
       pauseOverlay.style.display = 'none';
@@ -1654,6 +1801,8 @@
       hudHidden = !hudHidden;
       ui.classList.toggle('collapsed', hudHidden);
       hideBtn.textContent = hudHidden ? 'Unhide' : 'Hide';
+      applySettings();
+      syncGameplayControls();
     }
 
     function openManageOverlay(section = 'upgrades') {
@@ -1666,6 +1815,7 @@
       pauseOverlay.style.display = 'none';
       redeemOverlay.style.display = 'none';
       settingsOverlay.style.display = 'none';
+      statsOverlay.style.display = 'none';
       gameState = 'paused';
       syncGameplayControls();
       setTimeout(() => {
@@ -1677,7 +1827,7 @@
     function buyUpgrade(key) {
       const cfg = UPGRADE_CONFIG[key];
       if (!cfg) return;
-      const max = cfg.max;
+      const max = getUpgradeMax(key);
       if (upgrades[key] >= max) {
         toast('Max level reached', 'blue', 1300);
         return;
@@ -1702,10 +1852,12 @@
         nextLevel = Math.max(levelStart + 14, 24);
       }
 
+      playSound('upgrade', 0.45);
       updateBotTargetCount();
       refreshUpgradeUI();
       updateShopPreview();
       updateHUD();
+      saveStats();
       toast('Upgrade bought', 'good', 1400);
     }
 
@@ -1735,6 +1887,7 @@
       refreshUpgradeUI();
       updateShopPreview();
       updateHUD();
+      saveStats();
       toast(`Refunded ${key}`, 'blue', 1400);
     }
 
@@ -1780,8 +1933,8 @@
       player.speedBoostTime = 0;
       player.speedBoostMult = 1;
       level = 1;
-      levelStart = getStarterSize();
-      nextLevel = Math.max(levelStart + 14, 24);
+      dropletCount = 0;
+      dropletNeed = 500;
       killCount = 0;
       lootIntensity = 1;
       updateBotTargetCount();
@@ -2124,15 +2277,16 @@
 
     function updateChunks() {
       const { cx, cy } = currentChunk();
-      for (let x = cx - WORLD.loadRadius; x <= cx + WORLD.loadRadius; x++) {
-        for (let y = cy - WORLD.loadRadius; y <= cy + WORLD.loadRadius; y++) {
+      const radius = getChunkLoadRadius();
+      for (let x = cx - radius; x <= cx + radius; x++) {
+        for (let y = cy - radius; y <= cy + radius; y++) {
           const key = chunkKey(x, y);
           if (!chunkFoods.has(key)) generateChunk(x, y);
         }
       }
       for (const key of [...chunkFoods.keys()]) {
         const [x, y] = key.split(',').map(Number);
-        if (Math.abs(x - cx) > WORLD.keepRadius || Math.abs(y - cy) > WORLD.keepRadius) unloadChunk(key);
+        if (Math.abs(x - cx) > radius || Math.abs(y - cy) > radius) unloadChunk(key);
       }
     }
 
@@ -2197,6 +2351,9 @@
     function spawnRaidWave() {
       const count = Math.floor(rand(14, 30));
       toast('Wave raid incoming!', 'bad', 1800);
+      statsState.allRaids = (statsState.allRaids || 0) + 1;
+      statsState.victoryRaids = (statsState.victoryRaids || 0) + 1;
+      saveStats();
       for (let i = 0; i < count; i++) {
         if (bots.length >= MAX_BOTS + 10) break;
         spawnBot(
@@ -2378,13 +2535,15 @@
           playPositionalSound('eat', f.x, f.y, 900, 0.4);
           player.r += f.big ? f.r * 0.08 : f.r * 0.03;
           player.maxStamina = getPlayerMaxStamina();
+          dropletCount += 1;
+          statsState.foodsEaten = (statsState.foodsEaten || 0) + 1;
           addMoney(f.big ? Math.max(1, Math.floor((f.coinValue || 1) + f.r * 0.06)) : (f.coinValue || 1));
           player.stamina = Math.min(player.maxStamina, player.stamina + Math.max(1, Math.floor(f.r * 0.12)));
-          drawDotBurst(f.x, f.y, f.big ? 12 : 7, f.color, f.big ? 1.2 : 1);
+          drawDotBurst(f.x, f.y, f.big ? 12 : 7, f.color, f.big ? 1.3 : 1.05);
           foods.splice(i, 1);
         } else {
           playPositionalSound('buy', f.x, f.y, 900);
-          drawDotBurst(f.x, f.y, 12, f.kind === 'crate' ? '#ffffff' : '#66d9ff', 1.1);
+          drawDotBurst(f.x, f.y, 12, f.kind === 'crate' ? '#ffffff' : '#66d9ff', 1.2);
           collectLoot(f);
           foods.splice(i, 1);
         }
@@ -2409,7 +2568,7 @@
         const d = dist(bot.x, bot.y, f.x, f.y);
         if (d < bot.r + f.r * 0.78) {
           bot.r += f.big ? f.r * 0.06 : f.r * 0.03;
-          drawDotBurst(f.x, f.y, f.big ? 8 : 5, f.color, f.big ? 1 : 0.8);
+          drawDotBurst(f.x, f.y, f.big ? 8 : 5, f.color, f.big ? 1.15 : 0.95);
           foods.splice(i, 1);
           return true;
         }
@@ -2466,7 +2625,7 @@
               smaller.dying = true;
               larger.r += smaller.r * 0.06;
               playPositionalSound('kill', smaller.x, smaller.y, 1800);
-              drawDotBurst(smaller.x, smaller.y, 10, larger.r > player.r ? '#ff5e5e' : '#58ff72', 1);
+              drawDotBurst(smaller.x, smaller.y, 10, larger.r > player.r ? '#ff5e5e' : '#58ff72', 1.2);
               killCount += 1;
               updateBotTargetCount();
               const reward = sizeTierReward(smaller.r);
@@ -2507,7 +2666,7 @@
           addMoney(reward);
           player.stamina = Math.min(player.maxStamina, player.stamina + Math.max(1, Math.floor(reward / 25)));
           playPositionalSound('kill', bot.x, bot.y, 1800);
-          drawDotBurst(bot.x, bot.y, 15, '#58ff72', 1.1);
+          drawDotBurst(bot.x, bot.y, 15, '#58ff72', 1.25);
           killCount += 1;
           updateBotTargetCount();
           toast(`Kill Stats +1 | +${reward} money`, 'good', 1100);
@@ -2547,10 +2706,13 @@
     }
 
     function updateLevelSystem() {
-      while (player.r >= nextLevel) {
+      while (dropletCount >= dropletNeed) {
+        dropletCount -= dropletNeed;
         level++;
-        levelStart = nextLevel;
-        nextLevel = Math.max(computeNextLevelThreshold(nextLevel), player.r + 10);
+        profileLevel = Math.max(profileLevel, level);
+        dropletNeed = Math.max(500, Math.floor(dropletNeed * 2));
+        nextLevel = Math.max(nextLevel, player.r + 10);
+        saveStats();
         updateBotTargetCount();
       }
     }
@@ -2685,7 +2847,6 @@
     }
 
     function drawBots() {
-
       for (const bot of bots) {
         ctx.save();
         ctx.globalAlpha = bot.alpha;
@@ -2705,13 +2866,17 @@
         ctx.restore();
 
         const label = bot.name || 'BOT';
-        const fontSize = Math.max(10, Math.min(18, bot.r * 0.12));
+        const namePos = getNamePosition();
+        const fontSize = Math.max(12, Math.min(32, bot.r * 0.2));
+        const nameY = namePos === 'center' ? bot.y - 2 : namePos === 'below' ? bot.y + bot.r * 0.92 + Math.max(14, bot.r * 0.12) : bot.y - bot.r * 1.05 - Math.max(12, fontSize);
+        const sizeY = namePos === 'below' ? bot.y + bot.r * 1.12 + Math.max(26, bot.r * 0.2) : bot.y - bot.r * 0.55;
+
         ctx.font = `900 ${fontSize}px system-ui`;
         const textW = ctx.measureText(label).width;
         const boxW = textW + 14;
         const boxH = fontSize + 10;
         const boxX = bot.x - boxW / 2;
-        const boxY = bot.y - bot.r * 1.05 - boxH;
+        const boxY = namePos === 'below' ? bot.y + bot.r * 0.86 : bot.y - bot.r * 1.05 - boxH;
 
         ctx.fillStyle = 'rgba(0,0,0,.42)';
         ctx.fillRect(boxX, boxY, boxW, boxH);
@@ -2719,14 +2884,14 @@
         ctx.lineWidth = 1.5;
         ctx.strokeRect(boxX, boxY, boxW, boxH);
 
-        ctx.fillStyle = editorState.playerText || '#ffffff';
+        ctx.fillStyle = getNameColor();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(label, bot.x, boxY + boxH / 2 + 0.5);
 
         ctx.fillStyle = c;
-        ctx.font = `900 ${Math.max(10, Math.min(18, bot.r * 0.18))}px system-ui`;
-        ctx.fillText(Math.floor(bot.r), bot.x, bot.y - bot.r * 0.55);
+        ctx.font = `900 ${Math.max(12, Math.min(34, bot.r * 0.28))}px system-ui`;
+        ctx.fillText(Math.floor(bot.r), bot.x, sizeY);
 
         if (debugEnabled) {
           ctx.save();
@@ -2754,19 +2919,25 @@
         ctx.stroke();
         ctx.restore();
       }
+
+      const namePos = getNamePosition();
+      const nameColor = getNameColor();
+      const nameY = namePos === 'center' ? player.y - 2 : namePos === 'below' ? player.y + player.r + Math.max(14, player.r * 0.28) : player.y - player.r - Math.max(18, player.r * 0.35);
+      const sizeY = namePos === 'below' ? player.y + player.r + Math.max(32, player.r * 0.65) : player.y - player.r - Math.max(12, player.r * 0.22);
+
       ctx.save();
-      ctx.fillStyle = 'rgba(0,0,0,.45)';
-      ctx.font = `900 ${Math.max(11, Math.min(20, player.r * 0.18))}px system-ui`;
+      ctx.fillStyle = 'rgba(0,0,0,.48)';
+      ctx.font = `900 ${Math.max(12, Math.min(34, player.r * 0.28))}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(playerName || 'Player', player.x, player.y - player.r - 34);
+      ctx.fillText(playerName || 'Player', player.x, nameY);
       ctx.restore();
 
-      ctx.fillStyle = editorState.playerText || '#ffffff';
-      ctx.font = `${Math.max(12, Math.min(28, player.r * 0.34))}px system-ui`;
+      ctx.fillStyle = nameColor;
+      ctx.font = `900 ${Math.max(14, Math.min(48, player.r * 0.42))}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(Math.floor(player.r), player.x, player.y - player.r - 16);
+      ctx.fillText(Math.floor(player.r), player.x, sizeY);
     }
 
     function drawEffects() {
@@ -2872,19 +3043,26 @@
       uiSprint.textContent = player.sprinting ? 'ON' : 'OFF';
       uiSprint.className = player.sprinting ? 'good' : '';
       uiFuel.textContent = `${Math.floor(player.stamina)}%`;
-      uiNextRaid.textContent = formatCountdown(waveRaidNextTime - now);
-      uiFill.style.width = `${levelProgress() * 100}%`;
+      if (uiDroplets) uiDroplets.textContent = `${Math.floor(dropletCount)}/${Math.floor(dropletNeed)}`;
+      uiFill.style.width = `${clamp(dropletCount / Math.max(1, dropletNeed), 0, 1) * 100}%`;
       uiStaminaFill.style.width = `${clamp(player.stamina / Math.max(1, player.maxStamina), 0, 1) * 100}%`;
       moneyMiniValue.textContent = `${Math.floor(money).toString()}`;
+      if (statsMoney) statsMoney.textContent = `🟡 ${Math.floor(money)}`;
+      if (statsNextRaid) statsNextRaid.textContent = formatCountdown(waveRaidNextTime - now);
       sprintBtn.textContent = player.sprinting ? 'Fuel ON' : 'Fuel';
       sprintBtn.classList.toggle('on', player.sprinting);
       uiSpeed.style.display = (gameState === 'play' && t.showSpeedText !== false) ? '' : 'none';
       uiFuel.style.display = (gameState === 'play' && t.showHud !== false) ? '' : 'none';
-      uiBody.style.display = t.showHud ? '' : 'none';
+      uiBody.style.display = (t.showHud !== false && !hudHidden) ? '' : 'none';
       updateSpeedModeUI();
       refreshUpgradeUI();
       applySettings();
       syncGameplayControls();
+      statsState.topScore = Math.max(statsState.topScore || 0, Math.floor(player.r));
+      statsState.bestLevel = Math.max(statsState.bestLevel || 1, level);
+      statsState.profileLevel = profileLevel;
+      saveStats();
+      updateStatsOverlay();
     }
 
     function updateFPS(now) {
@@ -2904,6 +3082,7 @@
       refreshUpgradeUI();
       syncIconPreviews();
       applySettings();
+      scheduleNextRaid();
       worldReadyAt = performance.now() + 5000;
       nextCrateSpawnAt = performance.now() + 120000;
       if (!foods.some(f => f.kind === 'crate')) spawnTimedCrate(true);
@@ -2927,6 +3106,8 @@
       localStorage.removeItem(EDITOR_KEY);
       localStorage.removeItem(CHEAT_REDEEMED_KEY);
       localStorage.removeItem(SPEED_MODE_KEY);
+      localStorage.removeItem(PROFILE_LEVEL_KEY);
+      localStorage.removeItem(STATS_KEY);
       money = 0;
       upgrades = { ...DEFAULT_UPGRADES };
       upgrades = sanitizeUpgrades(upgrades);
@@ -2956,7 +3137,8 @@
           showDebugPanel: true,
           showNotifications: true,
           desktopMode: true
-        }
+        },
+        gameplay: { chunkLoadRadius: 1, namePosition: 'top', nameColor: '#ffffff' }
       };
       pauseReturnState = 'play';
       redeemReturnState = 'play';
@@ -2974,17 +3156,19 @@
     }
 
     function updateSpeedModeUI() {
-      speedModeBtn.textContent = speedMode === 'ups' ? 'UPS' : 'KPH';
+      if (speedModeBtn) speedModeBtn.textContent = speedMode === 'ups' ? 'UPS' : 'KPH';
     }
 
     function syncGameplayControls() {
       const inGameplay = gameState === 'play';
       const t = settingsState.toggles || {};
+      const visible = t.showHud !== false && !hudHidden;
       if (sprintBtn) sprintBtn.style.display = (inGameplay && t.showFuelButton !== false) ? '' : 'none';
-      if (speedModeBtn) speedModeBtn.style.display = (inGameplay && t.showSpeedText !== false) ? '' : 'none';
+      if (speedModeBtn) speedModeBtn.style.display = 'none';
       if (zoomControls) zoomControls.style.display = (inGameplay && t.showZoomControls !== false) ? 'flex' : 'none';
-      if (moneyMiniHud) moneyMiniHud.style.display = (inGameplay && t.showMoneyHud !== false) ? 'block' : 'none';
-      if (uiBody) uiBody.style.display = t.showHud && !hudHidden ? '' : 'none';
+      if (moneyMiniHud) moneyMiniHud.style.display = (inGameplay && t.showMoneyHud !== false && visible) ? 'block' : 'none';
+      if (uiBody) uiBody.style.display = visible ? '' : 'none';
+      if (playerNameInput) playerNameInput.style.display = visible ? '' : 'none';
       ui.classList.toggle('paused', gameState === 'paused');
       ui.classList.toggle('dragging', uiDrag.active);
       hideBtn.textContent = hudHidden ? 'Unhide' : 'Hide';
@@ -3037,6 +3221,7 @@
       redeemOverlay.style.display = 'none';
       gameOverOverlay.style.display = 'none';
       settingsOverlay.style.display = 'none';
+      if (statsOverlay) statsOverlay.style.display = 'none';
       syncGameplayControls();
     }
     function closePause() {
@@ -3044,6 +3229,7 @@
       pauseOverlay.style.display = 'none';
       redeemOverlay.style.display = 'none';
       settingsOverlay.style.display = 'none';
+      if (statsOverlay) statsOverlay.style.display = 'none';
       gameState = pauseReturnState === 'dead' ? 'dead' : 'play';
       if (gameState === 'dead') {
         gameOverOverlay.style.display = 'flex';
@@ -3085,7 +3271,7 @@
     function updateWaveTimer(now) {
       if (now >= waveRaidNextTime) {
         spawnRaidWave();
-        waveRaidNextTime = now + 20 * 60 * 1000;
+        scheduleNextRaid(now);
       }
     }
 
@@ -3110,16 +3296,19 @@
     pauseBtn.addEventListener('click', togglePause);
     f3Btn.addEventListener('click', () => { try { debugEnabled = !debugEnabled; updateDebug(); syncGameplayControls(); } catch (err) { console.error(err); } });
     sprintBtn.addEventListener('click', () => toggleSprint());
-    speedModeBtn.addEventListener('click', toggleSpeedMode);
-    killBtn.addEventListener('click', openDeathMenu);
+    if (speedModeBtn) speedModeBtn.addEventListener('click', toggleSpeedMode);
+    if (killBtn) killBtn.addEventListener('click', openDeathMenu);
     if (deathCloseBtn) deathCloseBtn.addEventListener('click', () => { gameOverOverlay.style.display = 'none'; gameState = 'play'; syncGameplayControls(); });
-    resetSaveBtn.addEventListener('click', () => { resetAllSaveData(); retryGame(); });
+    if (resetSaveBtn) resetSaveBtn.addEventListener('click', () => { resetAllSaveData(); retryGame(); });
     pauseResumeBtn.addEventListener('click', closePause);
-    pauseResetBtn.addEventListener('click', () => { closePause(); resetAllSaveData(); retryGame(); });
+    pauseResetBtn.addEventListener('click', () => { closePause(); retryGame(); });
     pauseRedeemBtn.addEventListener('click', () => openRedeem('paused'));
     pauseUpgradesBtn.addEventListener('click', () => openManageOverlay('upgrades'));
     pauseEditorBtn.addEventListener('click', () => openManageOverlay('editor'));
     pauseSettingsBtn.addEventListener('click', openSettings);
+    if (pauseCloseBtn) pauseCloseBtn.addEventListener('click', closePause);
+    if (statsCloseBtn) statsCloseBtn.addEventListener('click', closeStats);
+    pauseStatsBtn.addEventListener('click', openStats);
     closeRedeemBtn.addEventListener('click', closeRedeem);
     itemInput.addEventListener('input', updateShopPreview);
     buyBtn.addEventListener('click', buySelectedItem);
@@ -3368,6 +3557,7 @@
       Promise.allSettled([loadManifest(), loadCheatManifest()]).finally(() => {
         applyEditorTheme();
         syncSettingsUI();
+        bindSettingsLiveControls();
         applySettings();
         refreshUpgradeUI();
         syncIconPreviews();
