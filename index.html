@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Circle IO FIXED</title>
+<title>Circle IO v5 FIX</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
 body{
@@ -65,7 +65,7 @@ canvas{display:block;}
 <body>
 
 <div id="ui">
-<b>Circle IO FIXED</b><br>
+<b>Circle IO v5</b><br>
 Size: <span id="size">10</span>
 <div id="bar"><div id="fill"></div></div>
 </div>
@@ -84,42 +84,39 @@ canvas.width=innerWidth;
 canvas.height=innerHeight;
 
 /* CAMERA */
-let cam={
-x:0,
-y:0,
-zoom:1
-};
+let cam={x:0,y:0,zoom:1};
 
 /* PLAYER */
-let player={
-x:0,y:0,r:10,speed:4
-};
+let player={x:0,y:0,r:10,speed:4};
 
-/* FOOD */
+/* 🍽️ FOOD (MORE DROPLETS) */
 let food=[];
-for(let i=0;i<200;i++) spawnFood();
+for(let i=0;i<450;i++) spawnFood();
 
-function spawnFood(){
+function spawnFood(big=false){
 food.push({
-x:(Math.random()-0.5)*5000,
-y:(Math.random()-0.5)*5000,
-r:Math.random()*4+2,
-color:`hsl(${Math.random()*360},80%,60%)`
+x:(Math.random()-0.5)*2500,
+y:(Math.random()-0.5)*2500,
+r: big ? Math.random()*12+8 : Math.random()*4+2,
+color: big ? "#ffd36b" : `hsl(${Math.random()*360},80%,60%)`,
+big: big
 });
 }
 
-/* BOTS */
+/* 💎 BIG DROPLETS SPAWN */
+setInterval(()=>{
+spawnFood(true);
+}, 1200);
+
+/* 🤖 BOTS (FIXED SPAWN RANGE) */
 let bots=[];
-for(let i=0;i<25;i++) spawnBot();
+for(let i=0;i<18;i++) spawnBot();
 
 function spawnBot(){
 bots.push({
-x:(Math.random()-0.5)*5000,
-y:(Math.random()-0.5)*5000,
-
-/* random 1 - big insane */
-r:Math.random()*200+5,
-
+x:(Math.random()-0.5)*1200,
+y:(Math.random()-0.5)*1200,
+r:Math.random()*80+8,   // FIXED NORMAL RANGE
 vx:0,vy:0
 });
 }
@@ -175,25 +172,21 @@ player.y+=joy.y*player.speed*2;
 }
 }
 
-/* 🤖 FIXED AI (CORRECT LOGIC) */
+/* 🤖 FIXED AI */
 function botAI(b){
-
 let dx=player.x-b.x;
 let dy=player.y-b.y;
 let dist=Math.sqrt(dx*dx+dy*dy)+0.001;
 
-/* ✅ FIXED RULES */
+/* correct logic */
 if(b.r > player.r){
-/* BIGGER BOT → RUN AWAY */
 b.vx -= dx/dist*0.5;
 b.vy -= dy/dist*0.5;
 }else{
-/* SMALLER BOT → CHASE PLAYER */
-b.vx += dx/dist*0.4;
-b.vy += dy/dist*0.4;
+b.vx += dx/dist*0.35;
+b.vy += dy/dist*0.35;
 }
 
-/* smooth movement */
 b.vx*=0.92;
 b.vy*=0.92;
 
@@ -204,7 +197,7 @@ b.y+=b.vy;
 /* COLLISION */
 function collide(){
 
-/* food */
+/* FOOD */
 for(let i=0;i<food.length;i++){
 let f=food[i];
 let dx=player.x-f.x;
@@ -212,13 +205,13 @@ let dy=player.y-f.y;
 let d=Math.sqrt(dx*dx+dy*dy);
 
 if(d<player.r){
-player.r+=0.25;
+player.r+=f.big ? 0.8 : 0.25;
 food.splice(i,1);
 spawnFood();
 }
 }
 
-/* bots */
+/* BOTS */
 for(let i=0;i<bots.length;i++){
 let b=bots[i];
 
@@ -226,7 +219,7 @@ let dx=player.x-b.x;
 let dy=player.y-b.y;
 let d=Math.sqrt(dx*dx+dy*dy);
 
-/* eat smaller */
+/* eat */
 if(d<player.r && player.r>b.r){
 player.r+=b.r*0.05;
 bots.splice(i,1);
@@ -235,44 +228,30 @@ spawnBot();
 
 /* die */
 if(d<player.r && b.r>player.r){
-reset();
-}
-}
-}
-
-function reset(){
 player.x=0;
 player.y=0;
 player.r=10;
 }
+}
+}
 
-/* 🧭 GRID */
+/* GRID */
 function drawGrid(){
-let step=100;
+let step=120;
 
 ctx.strokeStyle="rgba(255,255,255,0.04)";
-ctx.lineWidth=1;
 
-/* camera-based grid */
-let startX=Math.floor((cam.x-2000)/step)*step;
-let endX=cam.x+2000;
-
-let startY=Math.floor((cam.y-2000)/step)*step;
-let endY=cam.y+2000;
-
-/* vertical */
-for(let x=startX;x<endX;x+=step){
+for(let x=-2000;x<2000;x+=step){
 ctx.beginPath();
-ctx.moveTo(x-cam.x+canvas.width/2, -2000);
-ctx.lineTo(x-cam.x+canvas.width/2, 2000);
+ctx.moveTo(x-cam.x+canvas.width/2,-2000);
+ctx.lineTo(x-cam.x+canvas.width/2,2000);
 ctx.stroke();
 }
 
-/* horizontal */
-for(let y=startY;y<endY;y+=step){
+for(let y=-2000;y<2000;y+=step){
 ctx.beginPath();
-ctx.moveTo(-2000, y-cam.y+canvas.height/2);
-ctx.lineTo(2000, y-cam.y+canvas.height/2);
+ctx.moveTo(-2000,y-cam.y+canvas.height/2);
+ctx.lineTo(2000,y-cam.y+canvas.height/2);
 ctx.stroke();
 }
 }
@@ -281,16 +260,14 @@ ctx.stroke();
 function draw(){
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-/* smooth camera follow */
-cam.x += (player.x - cam.x)*0.08;
-cam.y += (player.y - cam.y)*0.08;
+/* CAMERA */
+cam.x+=(player.x-cam.x)*0.08;
+cam.y+=(player.y-cam.y)*0.08;
 
-/* 📷 FIXED ZOOM (REAL IO STYLE) */
-cam.zoom = Math.max(0.35, Math.min(1.2, 20/player.r));
+/* zoom out when big */
+cam.zoom=Math.max(0.4,Math.min(1.2,18/player.r));
 
 ctx.save();
-
-/* apply zoom + center */
 ctx.translate(canvas.width/2,canvas.height/2);
 ctx.scale(cam.zoom,cam.zoom);
 ctx.translate(-cam.x,-cam.y);
@@ -312,8 +289,6 @@ botAI(b);
 
 ctx.beginPath();
 ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-
-/* color logic */
 ctx.fillStyle=b.r>player.r?"red":"lime";
 ctx.fill();
 }
@@ -333,9 +308,8 @@ move();
 collide();
 draw();
 
-/* UI */
 document.getElementById("size").innerText=Math.floor(player.r);
-document.getElementById("fill").style.width=Math.min(player.r/5,100)+"%";
+document.getElementById("fill").style.width=Math.min(player.r/4,100)+"%";
 
 requestAnimationFrame(loop);
 }
