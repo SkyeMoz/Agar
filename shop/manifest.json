@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "uid": "AmongUsModLobby",
+      "price": 550,
+      "file": "AmongUs.zip"
+    },
+    {
+      "uid": "SF2Modified",
+      "price": 25000,
+      "file": "sf2.zip"
+    }
+  ]
+}
