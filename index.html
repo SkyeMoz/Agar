@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Circle IO v13</title>
+  <title>Circle IO v1.0.1</title>
   <style>
     :root{
       --bg:#0b0b12;
+      --bgGlow:#17111a;
       --panel:rgba(255,255,255,.07);
       --stroke:rgba(255,255,255,.08);
       --text:#fff;
@@ -15,6 +16,8 @@
       --good:#58ff72;
       --bad:#ff5e5e;
       --blue:#62b9ff;
+      --playerCircle:#ffffff;
+      --playerText:#ffffff;
     }
     *{
       box-sizing:border-box;
@@ -26,32 +29,37 @@
       width:100%;
       height:100%;
       overflow:hidden;
-      background:radial-gradient(circle at top,#17111a,var(--bg));
+      background:radial-gradient(circle at top,var(--bgGlow),var(--bg));
       font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
       color:var(--text);
       position:fixed;
       inset:0;
     }
-    body{touch-action:none}
+    body{touch-action:manipulation; overscroll-behavior:none;}
     canvas{
       position:fixed;
       inset:0;
       width:100vw;
       height:100dvh;
       display:block;
+      touch-action:none;
     }
 
     #ui{
+      pointer-events:auto;
       position:fixed;
-      top:calc(10px + env(safe-area-inset-top, 0px));
-      left:calc(10px + env(safe-area-inset-left, 0px));
+      left:50%;
+      top:calc(12px + env(safe-area-inset-top, 0px));
+      bottom:auto;
+      transform:translateX(-50%);
       z-index:30;
-      min-width:290px;
-      padding:12px;
-      border-radius:14px;
-      background:var(--panel);
+      width:min(1020px,calc(100vw - 12px));
+      min-width:0;
+      padding:10px 12px;
+      border-radius:20px;
+      background:rgba(15,15,22,.84);
       border:1px solid var(--stroke);
-      backdrop-filter:blur(10px);
+      backdrop-filter:blur(12px);
       box-shadow:0 14px 35px rgba(0,0,0,.25);
     }
     #uiTop{
@@ -59,20 +67,27 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      margin-bottom:8px;
+      margin-bottom:6px;
     }
     #uiTop b{
-      font-size:14px;
+      font-size:15px;
       letter-spacing:.02em;
+      display:flex;
+      align-items:center;
     }
-    #menuBtn,#f3Btn,#sprintBtn,#killBtn{
+    #menuBtn,#f3Btn,#sprintBtn,#killBtn,#zoomInBtn,#zoomOutBtn{
       border:1px solid rgba(255,255,255,.12);
       background:rgba(255,255,255,.06);
       color:var(--text);
       border-radius:10px;
-      padding:6px 9px;
+      padding:7px 10px;
       font-weight:800;
       cursor:pointer;
+      touch-action:manipulation;
+    }
+    #menuBtn{
+      min-width:72px;
+      text-align:center;
     }
     #killBtn{color:#ffd4d4}
     #sprintBtn.on{
@@ -80,6 +95,18 @@
       border-color:rgba(98,185,255,.4);
     }
     #uiBody.collapsed{display:none}
+    #ui.collapsed{
+      width:auto;
+      padding:10px 12px;
+    }
+    #ui.collapsed #uiTop > :not(#menuBtn){
+      display:none;
+    }
+    #ui.collapsed .menuLabel,
+    #ui.collapsed #playerNameInput,
+    #ui.collapsed #uiBody{
+      display:none;
+    }
 
     .menuLabel{
       text-align:left;
@@ -88,6 +115,7 @@
       margin-top:8px;
     }
     .menuField{
+      touch-action:manipulation;
       width:100%;
       border:1px solid rgba(255,255,255,.10);
       background:rgba(255,255,255,.06);
@@ -97,16 +125,27 @@
       outline:none;
       font-size:14px;
       margin-top:6px;
-      margin-bottom:8px;
+      margin-bottom:6px;
     }
 
+    #uiBody{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:8px;
+    }
     .stat-row{
       display:flex;
       justify-content:space-between;
       gap:10px;
-      font-size:13px;
+      align-items:center;
+      font-size:12px;
       color:var(--muted);
-      margin-top:2px;
+      margin-top:0;
+      padding:7px 10px;
+      border-radius:12px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      min-height:34px;
     }
     .stat-row .good{color:var(--good)}
     .stat-row .bad{color:var(--bad)}
@@ -192,6 +231,97 @@
       to{opacity:1;transform:translateY(0) scale(1)}
     }
 
+    #moneyMiniHud{
+      pointer-events:none;
+      position:fixed;
+      top:calc(12px + env(safe-area-inset-top, 0px));
+      right:calc(12px + env(safe-area-inset-right, 0px));
+      z-index:80;
+      min-width:132px;
+      padding:8px 10px;
+      border-radius:14px;
+      background:rgba(10,10,16,.78);
+      border:1px solid rgba(255,255,255,.10);
+      backdrop-filter:blur(10px);
+      box-shadow:0 10px 24px rgba(0,0,0,.24);
+      pointer-events:none;
+    }
+    #moneyMiniTop{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      font-size:12px;
+      line-height:1.1;
+      margin-bottom:6px;
+    }
+    #moneyMiniTop b{
+      font-size:12px;
+      letter-spacing:.02em;
+    }
+    #moneyMiniValue{
+      font-weight:900;
+      color:#fff;
+      white-space:nowrap;
+    }
+    #moneyMiniBar{
+      width:100%;
+      height:8px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#1b1b25;
+      border:1px solid rgba(255,255,255,.05);
+    }
+    #moneyMiniFill{
+      width:100%;
+      height:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#ffb36b,var(--accent));
+      box-shadow:0 0 16px rgba(255,138,61,.25);
+      transform-origin:left center;
+    }
+
+    #zoomControls{
+      pointer-events:auto;
+      position:fixed;
+      right:calc(12px + env(safe-area-inset-right, 0px));
+      bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+      z-index:78;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    #zoomControls button{
+      width:48px;
+      height:48px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.08);
+      color:#fff;
+      font-weight:900;
+      font-size:22px;
+      box-shadow:0 10px 24px rgba(0,0,0,.22);
+      backdrop-filter:blur(10px);
+      touch-action:none;
+    }
+    #zoomControls button:active{
+      transform:scale(.96);
+    }
+    #activeBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin-left:8px;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      color:#d8ffe0;
+      background:rgba(88,255,114,.10);
+      border:1px solid rgba(88,255,114,.18);
+      vertical-align:middle;
+    }
+
     #joyBase{
       position:fixed;
       left:50%;
@@ -256,6 +386,7 @@
     .card h2{margin:0 0 8px;font-size:24px}
     .card p{margin:0 0 16px;color:var(--muted);line-height:1.5}
     .card button{
+      touch-action:manipulation;
       border:0;
       border-radius:14px;
       min-height:48px;
@@ -391,6 +522,49 @@
       font-size:12px;
       color:var(--muted);
     }
+    .upgradeItem{
+      display:grid;
+      gap:8px;
+    }
+    .upgradeActions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+    .upgradeMiniBtn{
+      width:100%;
+      border-radius:14px;
+      min-height:40px;
+      padding:0 12px;
+      font-weight:900;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+    }
+    .upgradeMiniBtn.refund{
+      background:rgba(255,94,94,.10);
+      border-color:rgba(255,94,94,.20);
+    }
+    .colorGrid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+    .colorField{
+      width:100%;
+      height:48px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      padding:6px;
+    }
+    .toggleRow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
 
     .scrollFancy::-webkit-scrollbar,
     .card::-webkit-scrollbar,
@@ -423,8 +597,12 @@
 
     @media (max-width:640px){
       #ui{
-        min-width:210px;
-        max-width:calc(100vw - 20px);
+        width:calc(100vw - 12px);
+        padding:8px 10px;
+      }
+      #uiBody{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:6px;
       }
       .card .row,.iconPickers,.previewRow,.iconButtons,.soundGrid{
         grid-template-columns:1fr;
@@ -440,9 +618,9 @@
 <body>
   <div id="ui">
     <div id="uiTop">
-      <b>Circle IO</b>
+      <b id="titleLabel"><span id="activeBadge">1.0.1</span></b>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button id="menuBtn" type="button">☰</button>
+        <button id="menuBtn" type="button">Hide</button>
         <button id="sprintBtn" type="button">Fuel</button>
         <button id="f3Btn" type="button">F3</button>
         <button id="killBtn" type="button">☠</button>
@@ -468,7 +646,15 @@
   </div>
 
   <div id="toastWrap"></div>
+  <div id="moneyMiniHud" aria-hidden="true">
+    <div id="moneyMiniTop"><b>Money</b><span id="moneyMiniValue">0</span></div>
+    <div id="moneyMiniBar"><div id="moneyMiniFill"></div></div>
+  </div>
   <div id="joyBase" aria-hidden="true"><div id="joyStick"></div></div>
+  <div id="zoomControls" aria-hidden="true">
+    <button id="zoomInBtn" type="button" aria-label="Zoom out">+</button>
+    <button id="zoomOutBtn" type="button" aria-label="Zoom in">-</button>
+  </div>
 
   <div id="loadingOverlay" class="overlay">
     <div class="card">
@@ -487,17 +673,43 @@
       </div>
       <button id="resetSaveBtn" type="button" class="buyBad" style="width:100%;margin-top:10px;">Reset Save</button>
 
+
       <div class="section">
         <h2 style="font-size:18px;margin-bottom:6px;">Upgrade Mode</h2>
         <p style="margin-bottom:10px;">Buy upgrades here. Value and level are shown under each button.</p>
         <div class="upgradeGrid">
-          <button id="upStarterBtn" class="upgradeBtn" type="button"><div class="name">Starter Size</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upSpeedBtn" class="upgradeBtn" type="button"><div class="name">Speed</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upMagnetBtn" class="upgradeBtn" type="button"><div class="name">Magnet Radius</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upBotsBtn" class="upgradeBtn" type="button"><div class="name">More Bots</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upDropletsBtn" class="upgradeBtn" type="button"><div class="name">More Droplets</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upGemsBtn" class="upgradeBtn" type="button"><div class="name">More Gems</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upFuelBtn" class="upgradeBtn" type="button"><div class="name">More Fuel</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
+          <div class="upgradeItem">
+            <button id="upStarterBtn" class="upgradeBtn" type="button"><div class="name">UP Starter Size</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundStarterBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buyStarterBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
+          <div class="upgradeItem">
+            <button id="upSpeedBtn" class="upgradeBtn" type="button"><div class="name">UP Speed</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundSpeedBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buySpeedBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
+          <div class="upgradeItem">
+            <button id="upMagnetBtn" class="upgradeBtn" type="button"><div class="name">UP Magnet Radius</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundMagnetBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buyMagnetBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
+          <div class="upgradeItem">
+            <button id="upBotsBtn" class="upgradeBtn" type="button"><div class="name">UP More Bots</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundBotsBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buyBotsBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
+          <div class="upgradeItem">
+            <button id="upDropletsBtn" class="upgradeBtn" type="button"><div class="name">UP More Droplets</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundDropletsBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buyDropletsBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
+          <div class="upgradeItem">
+            <button id="upGemsBtn" class="upgradeBtn" type="button"><div class="name">UP More Gems</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundGemsBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buyGemsBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
+          <div class="upgradeItem">
+            <button id="upFuelBtn" class="upgradeBtn" type="button"><div class="name">UP More Fuel</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundFuelBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buyFuelBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
+          <div class="upgradeItem">
+            <button id="upCoinsBtn" class="upgradeBtn" type="button"><div class="name">UP More Coins</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 0</div></button>
+            <div class="upgradeActions"><button id="refundCoinsBtn" type="button" class="upgradeMiniBtn refund">Refund</button><button id="buyCoinsBtn" type="button" class="upgradeMiniBtn">UP</button></div>
+          </div>
         </div>
         <div class="smallNote" id="upgradeNote">Starter size only applies when you retry.</div>
       </div>
@@ -549,12 +761,45 @@
             <div class="menuLabel">Click sound</div>
             <input id="clickSoundInput" class="menuField" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" />
           </div>
+          <div>
+            <div class="menuLabel">Power sound</div>
+            <input id="powerSoundInput" class="menuField" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a" />
+          </div>
         </div>
         <div class="iconButtons">
           <button id="saveSoundsBtn" type="button">Save Sounds</button>
           <button id="resetSoundsBtn" type="button" class="ghost">Reset Sounds</button>
         </div>
       </div>
+
+
+      <div class="section">
+        <h2 style="font-size:18px;margin-bottom:6px;">Editor Tab</h2>
+        <p style="margin-bottom:10px;">Tune your player look and background in-game.</p>
+        <div class="colorGrid">
+          <div>
+            <div class="menuLabel">Circle color</div>
+            <input id="circleColorInput" class="colorField" type="color" />
+          </div>
+          <div>
+            <div class="menuLabel">Text color</div>
+            <input id="playerTextColorInput" class="colorField" type="color" />
+          </div>
+          <div>
+            <div class="menuLabel">Background color</div>
+            <input id="backgroundColorInput" class="colorField" type="color" />
+          </div>
+          <div>
+            <div class="menuLabel">Chunk loop hint</div>
+            <div class="statusBox" style="min-height:48px;margin-top:6px;">Chunks are generated as square tiles and repeat in a looped pattern.</div>
+          </div>
+        </div>
+        <div class="toggleRow">
+          <button id="saveEditorBtn" type="button">Save Editor</button>
+          <button id="resetEditorBtn" type="button" class="ghost">Reset Editor</button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -568,6 +813,18 @@
       <div class="row" style="margin-top:12px;">
         <button id="buyBtn" type="button" class="buyBad">Buy</button>
         <button id="closeRedeemBtn" type="button" class="ghost">Close</button>
+      </div>
+
+      <div class="section">
+        <h2 style="font-size:18px;margin-bottom:6px;">Cheat Code</h2>
+        <p style="margin-bottom:10px;">Redeem coins with codes from settings/cheat/manifest.json.</p>
+        <div class="menuLabel">Enter cheat code.</div>
+        <input id="cheatInput" class="menuField" type="text" placeholder="SkyeMoz" autocomplete="off" />
+        <div id="cheatStatus" class="statusBox">Enter a cheat code to claim coins.</div>
+        <div class="row" style="margin-top:12px;">
+          <button id="cheatRedeemBtn" type="button" class="buyGood">Redeem Coins</button>
+          <button id="cheatCloseBtn" type="button" class="ghost">Close</button>
+        </div>
       </div>
     </div>
   </div>
@@ -589,6 +846,7 @@
     window.addEventListener('orientationchange', resizeCanvas, { passive: true });
     resizeCanvas();
 
+    const ui = document.getElementById('ui');
     const uiLevel = document.getElementById('levelText');
     const uiSize = document.getElementById('sizeText');
     const uiMoney = document.getElementById('moneyText');
@@ -606,6 +864,11 @@
     const sprintBtn = document.getElementById('sprintBtn');
     const killBtn = document.getElementById('killBtn');
     const playerNameInput = document.getElementById('playerNameInput');
+    const moneyMiniHud = document.getElementById('moneyMiniHud');
+    const moneyMiniValue = document.getElementById('moneyMiniValue');
+    const moneyMiniFill = document.getElementById('moneyMiniFill');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
 
     const loadingOverlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
@@ -625,6 +888,7 @@
     const buySoundInput = document.getElementById('buySoundInput');
     const errorSoundInput = document.getElementById('errorSoundInput');
     const clickSoundInput = document.getElementById('clickSoundInput');
+    const powerSoundInput = document.getElementById('powerSoundInput');
     const saveSoundsBtn = document.getElementById('saveSoundsBtn');
     const resetSoundsBtn = document.getElementById('resetSoundsBtn');
     const upStarterBtn = document.getElementById('upStarterBtn');
@@ -634,6 +898,28 @@
     const upDropletsBtn = document.getElementById('upDropletsBtn');
     const upGemsBtn = document.getElementById('upGemsBtn');
     const upFuelBtn = document.getElementById('upFuelBtn');
+    const upCoinsBtn = document.getElementById('upCoinsBtn');
+    const refundStarterBtn = document.getElementById('refundStarterBtn');
+    const refundSpeedBtn = document.getElementById('refundSpeedBtn');
+    const refundMagnetBtn = document.getElementById('refundMagnetBtn');
+    const refundBotsBtn = document.getElementById('refundBotsBtn');
+    const refundDropletsBtn = document.getElementById('refundDropletsBtn');
+    const refundGemsBtn = document.getElementById('refundGemsBtn');
+    const refundFuelBtn = document.getElementById('refundFuelBtn');
+    const refundCoinsBtn = document.getElementById('refundCoinsBtn');
+    const buyStarterBtn = document.getElementById('buyStarterBtn');
+    const buySpeedBtn = document.getElementById('buySpeedBtn');
+    const buyMagnetBtn = document.getElementById('buyMagnetBtn');
+    const buyBotsBtn = document.getElementById('buyBotsBtn');
+    const buyDropletsBtn = document.getElementById('buyDropletsBtn');
+    const buyGemsBtn = document.getElementById('buyGemsBtn');
+    const buyFuelBtn = document.getElementById('buyFuelBtn');
+    const buyCoinsBtn = document.getElementById('buyCoinsBtn');
+    const circleColorInput = document.getElementById('circleColorInput');
+    const playerTextColorInput = document.getElementById('playerTextColorInput');
+    const backgroundColorInput = document.getElementById('backgroundColorInput');
+    const saveEditorBtn = document.getElementById('saveEditorBtn');
+    const resetEditorBtn = document.getElementById('resetEditorBtn');
     const upgradeNote = document.getElementById('upgradeNote');
 
     const redeemOverlay = document.getElementById('redeemOverlay');
@@ -641,6 +927,10 @@
     const itemStatus = document.getElementById('itemStatus');
     const buyBtn = document.getElementById('buyBtn');
     const closeRedeemBtn = document.getElementById('closeRedeemBtn');
+    const cheatInput = document.getElementById('cheatInput');
+    const cheatStatus = document.getElementById('cheatStatus');
+    const cheatRedeemBtn = document.getElementById('cheatRedeemBtn');
+    const cheatCloseBtn = document.getElementById('cheatCloseBtn');
 
     const toastWrap = document.getElementById('toastWrap');
     const joyBase = document.getElementById('joyBase');
@@ -652,8 +942,9 @@
     const NAME_KEY = 'circleio_name_v13';
     const UPGRADE_KEY = 'circleio_upgrades_v13';
     const SHOP_MANIFEST_URL = 'shop/manifest.json';
+    const CHEAT_MANIFEST_URL = 'settings/cheat/manifest.json';
     const SHOP_BASE_URL = 'shop/';
-    const WORLD = { chunkSize: 700, loadRadius: 3, keepRadius: 5 };
+    const WORLD = { chunkSize: 700, loadRadius: 3, keepRadius: 5, loopChunks: 12 };
     const MAX_BOTS = 90;
     const MAX_EFFECTS = 260;
     const MAX_FOODS = 3200;
@@ -662,7 +953,8 @@
       kill: 'settings/kill.mp3',
       buy: 'settings/buy.mp3',
       error: 'settings/error.mp3',
-      click: 'settings/click.mp3'
+      click: 'settings/click.mp3',
+      power: 'settings/power.mp3'
     };
     const BOT_NAMES = [
       'Alex','Aiden','Arlo','Asher','Atlas','Bennett','Blake','Carter','Cole','Declan','Eden','Eli','Finn','Flynn','Gavin','Hayden','Ivy','Jace','Jasper','Kai','Leo','Liam','Mason','Nolan','Noah','Owen','Parker','Quinn','Reed','Rowan','Ryker','Silas','Theo','Troy','Wes','Wyatt','Zane',
@@ -670,14 +962,46 @@
       'Alpha','Bravo','Cobra','Delta','Echo','Falcon','Ghost','Hunter','Ion','Jinx','Knight','Luna','Nova','Orion','Pixel','Quark','Raven','Sting','Titan','Umbra','Viper','Wolf','Zephyr','Aster','Blaze','Comet','Drift','Ember','Frost','Glint','Haze','Indigo','Jade','Kilo','Lumen','Mira','Nox','Onyx','Prism','Quest','Rift','Solar','Talon','Ultra','Vector','Wisp','Xeno','Yara','Zion','Amber','Beryl','Chrome','Dusk','Eon','Flux','Glory','Halo','Iris','Jolt','Karma','Lyric'
     ];
     const DEFAULT_ICON_STATE = { player: null, bot: null };
-    const DEFAULT_UPGRADES = { starterSize: 0, speed: 0, magnet: 0, bots: 0, droplets: 0, gems: 0, fuel: 0 };
+    const DEFAULT_UPGRADES = { starterSize: 0, speed: 0, magnet: 0, bots: 0, droplets: 0, gems: 0, fuel: 0, coins: 0 };
+    const DEFAULT_EDITOR_STATE = { playerCircle: '#ffffff', playerText: '#ffffff', background: '#0b0b12', glow: '#17111a' };
+    const UPGRADE_CONFIG = {
+      starterSize: { base: 40, max: 18 },
+      speed: { base: 45, max: 24 },
+      magnet: { base: 35, max: 20 },
+      bots: { base: 60, max: 16 },
+      droplets: { base: 55, max: 28 },
+      gems: { base: 65, max: 22 },
+      fuel: { base: 50, max: 20 },
+      coins: { base: 70, max: 26 }
+    };
+    const EDITOR_KEY = 'circleio_editor_v101';
 
     const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     if (!isTouch) joyBase.style.display = 'none';
 
+
     function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
     function rand(min, max) { return Math.random() * (max - min) + min; }
     function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+    function wrapChunkCoord(v) {
+      const m = WORLD.loopChunks;
+      return ((v % m) + m) % m;
+    }
+    function chunkSeed(cx, cy) {
+      const wx = wrapChunkCoord(cx);
+      const wy = wrapChunkCoord(cy);
+      let h = (wx + 1) * 374761393 ^ (wy + 1) * 668265263;
+      h = (h ^ (h >>> 13)) * 1274126177;
+      return (h ^ (h >>> 16)) >>> 0;
+    }
+    function mulberry32(a) {
+      return function() {
+        let t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
 
     function loadJson(key, fallback) {
       try {
@@ -735,6 +1059,32 @@
       } catch {}
     }
 
+    function playPowerSound(x = 0, y = 0) {
+      try {
+        if (sounds.power) {
+          playPositionalSound(sounds.power, x, y, 1200);
+          return;
+        }
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = playPowerSound._ctx || (playPowerSound._ctx = new AC());
+        if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(620, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(980, ctx.currentTime + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(760, ctx.currentTime + 0.14);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } catch {}
+    }
+
     function normalizeName(s) { return String(s || '').trim().replace(/^\/+/, ''); }
 
     function sizeColor(r) {
@@ -767,20 +1117,25 @@
 
     let money = Number(localStorage.getItem(MONEY_KEY) || 0);
     let upgrades = { ...DEFAULT_UPGRADES, ...loadJson(UPGRADE_KEY, { ...DEFAULT_UPGRADES }) };
+    let editorState = { ...DEFAULT_EDITOR_STATE, ...loadJson(EDITOR_KEY, { ...DEFAULT_EDITOR_STATE }) };
     let iconState = { ...DEFAULT_ICON_STATE, ...loadJson(ICON_KEY, { ...DEFAULT_ICON_STATE }) };
     let customIcons = { player: iconState.player || null, bot: iconState.bot || null };
     let playerName = localStorage.getItem(NAME_KEY) || 'SkyeMozYT';
     playerNameInput.value = playerName;
 
     let soundSources = { ...DEFAULT_SOUND_SOURCES, ...loadJson(SOUND_KEY, {}) };
-    let sounds = { eat: null, kill: null, buy: null, error: null, click: null };
+    let sounds = { eat: null, kill: null, buy: null, error: null, click: null, power: null };
 
     let playerIconImage = null;
     let botIconImage = null;
     let gemImg = null;
     let shopManifest = { items: [] };
+    let cheatManifest = { items: [] };
     let selectedShopItem = null;
     let selectedShopFileUrl = null;
+    let zoomHold = null;
+    let manualZoom = 1;
+    let manualZoomTarget = 1;
 
     let player = {
       x: 0, y: 0, r: 10, speed: 4, sprinting: false,
@@ -812,12 +1167,63 @@
     let nextCrateSpawnAt = performance.now() + 120000;
     let manifestLoaded = false;
 
+
+    function sanitizeUpgrades(raw = {}) {
+      const out = { ...DEFAULT_UPGRADES };
+      for (const key of Object.keys(out)) {
+        const max = UPGRADE_CONFIG[key]?.max ?? 0;
+        out[key] = clamp(Math.floor(Number(raw?.[key] || 0)), 0, max);
+      }
+      return out;
+    }
+
+    upgrades = sanitizeUpgrades(upgrades);
+
+    function getCoinMultiplier() {
+      return 1 + upgrades.coins * 0.08 + Math.log10(player.r + 10) * 0.02;
+    }
+
+    function applyEditorTheme() {
+      document.documentElement.style.setProperty('--playerCircle', editorState.playerCircle || DEFAULT_EDITOR_STATE.playerCircle);
+      document.documentElement.style.setProperty('--playerText', editorState.playerText || DEFAULT_EDITOR_STATE.playerText);
+      document.documentElement.style.setProperty('--bg', editorState.background || DEFAULT_EDITOR_STATE.background);
+      document.documentElement.style.setProperty('--bgGlow', editorState.glow || DEFAULT_EDITOR_STATE.glow);
+      document.body.style.background = `radial-gradient(circle at top, ${editorState.glow || DEFAULT_EDITOR_STATE.glow}, ${editorState.background || DEFAULT_EDITOR_STATE.background})`;
+      circleColorInput.value = editorState.playerCircle || DEFAULT_EDITOR_STATE.playerCircle;
+      playerTextColorInput.value = editorState.playerText || DEFAULT_EDITOR_STATE.playerText;
+      backgroundColorInput.value = editorState.background || DEFAULT_EDITOR_STATE.background;
+    }
+
+    function saveEditor() {
+      editorState = {
+        playerCircle: circleColorInput.value || DEFAULT_EDITOR_STATE.playerCircle,
+        playerText: playerTextColorInput.value || DEFAULT_EDITOR_STATE.playerText,
+        background: backgroundColorInput.value || DEFAULT_EDITOR_STATE.background,
+        glow: editorState.glow || DEFAULT_EDITOR_STATE.glow
+      };
+      saveJson(EDITOR_KEY, editorState);
+      applyEditorTheme();
+      toast('Editor saved', 'good', 1400);
+    }
+
+    function resetEditor() {
+      editorState = { ...DEFAULT_EDITOR_STATE };
+      localStorage.removeItem(EDITOR_KEY);
+      applyEditorTheme();
+      toast('Editor reset', 'blue', 1400);
+    }
+
+    function saveUpgrades() {
+      saveJson(UPGRADE_KEY, upgrades);
+    }
+
     function initSounds() {
       sounds.eat = new Audio(soundSources.eat || DEFAULT_SOUND_SOURCES.eat);
       sounds.kill = new Audio(soundSources.kill || DEFAULT_SOUND_SOURCES.kill);
       sounds.buy = new Audio(soundSources.buy || DEFAULT_SOUND_SOURCES.buy);
       sounds.error = new Audio(soundSources.error || DEFAULT_SOUND_SOURCES.error);
       sounds.click = new Audio(soundSources.click || DEFAULT_SOUND_SOURCES.click);
+      sounds.power = new Audio(soundSources.power || DEFAULT_SOUND_SOURCES.power);
       Object.values(sounds).forEach(a => { if (a) a.preload = 'auto'; });
     }
     initSounds();
@@ -870,35 +1276,42 @@
     function updateBotTargetCount() {
       targetBotCount = clamp(20 + Math.floor(level * 1.25) + Math.floor(killCount / 5) + upgrades.bots * 6, 20, MAX_BOTS);
     }
-    function addMoney(n) {
-      money += n;
+    function addMoney(n, applyBonus = true) {
+      const gain = Math.max(0, Math.floor(Number(n) || 0));
+      money += applyBonus ? Math.floor(gain * getCoinMultiplier()) : gain;
       saveMoney();
     }
 
     function refreshUpgradeUI() {
       const items = [
-        { el: upStarterBtn, name: 'Starter Size', val: upgrades.starterSize, price: 40 },
-        { el: upSpeedBtn, name: 'Speed', val: upgrades.speed, price: 45 },
-        { el: upMagnetBtn, name: 'Magnet Radius', val: upgrades.magnet, price: 35 },
-        { el: upBotsBtn, name: 'More Bots', val: upgrades.bots, price: 60 },
-        { el: upDropletsBtn, name: 'More Droplets', val: upgrades.droplets, price: 55 },
-        { el: upGemsBtn, name: 'More Gems', val: upgrades.gems, price: 65 },
-        { el: upFuelBtn, name: 'More Fuel', val: upgrades.fuel, price: 50 }
+        { el: upStarterBtn, key: 'starterSize', name: 'Starter Size', base: UPGRADE_CONFIG.starterSize.base },
+        { el: upSpeedBtn, key: 'speed', name: 'Speed', base: UPGRADE_CONFIG.speed.base },
+        { el: upMagnetBtn, key: 'magnet', name: 'Magnet Radius', base: UPGRADE_CONFIG.magnet.base },
+        { el: upBotsBtn, key: 'bots', name: 'More Bots', base: UPGRADE_CONFIG.bots.base },
+        { el: upDropletsBtn, key: 'droplets', name: 'More Droplets', base: UPGRADE_CONFIG.droplets.base },
+        { el: upGemsBtn, key: 'gems', name: 'More Gems', base: UPGRADE_CONFIG.gems.base },
+        { el: upFuelBtn, key: 'fuel', name: 'More Fuel', base: UPGRADE_CONFIG.fuel.base },
+        { el: upCoinsBtn, key: 'coins', name: 'More Coins', base: UPGRADE_CONFIG.coins.base }
       ];
-      items.forEach(({ el, name, val, price }) => {
-        el.querySelector('.name').textContent = name;
-        el.querySelector('.value').textContent = `Value 🟡 ${upgradePrice(price, val)}`;
-        el.querySelector('.level').textContent = `Lv ${val} / 999`;
+      items.forEach(({ el, key, name, base }) => {
+        const val = upgrades[key];
+        const max = UPGRADE_CONFIG[key].max;
+        el.querySelector('.name').textContent = `UP ${name}`;
+        el.querySelector('.value').textContent = `Value 🟡 ${upgradePrice(base, val)}`;
+        el.querySelector('.level').textContent = `Lv ${val} / ${max}`;
       });
-      upgradeNote.textContent = 'Starter size only applies when you retry.';
+      upgradeNote.textContent = 'Starter size only applies when you retry. Refund gives back 75% of the last buy price.';
     }
 
-    function buyUpgrade(key, base) {
-      if (upgrades[key] >= 999) {
+    function buyUpgrade(key) {
+      const cfg = UPGRADE_CONFIG[key];
+      if (!cfg) return;
+      const max = cfg.max;
+      if (upgrades[key] >= max) {
         toast('Max level reached', 'blue', 1300);
         return;
       }
-      const price = upgradePrice(base, upgrades[key]);
+      const price = upgradePrice(cfg.base, upgrades[key]);
       if (money < price) {
         playPositionalSound(sounds.error, player.x, player.y, 1200);
         toast('Not enough money', 'bad', 1400);
@@ -907,13 +1320,15 @@
       money -= price;
       saveMoney();
       upgrades[key] += 1;
-      saveJson(UPGRADE_KEY, upgrades);
+      saveUpgrades();
 
-      if (key === 'fuel') {
+      if (key === 'fuel' || key === 'starterSize' || key === 'coins') {
         player.maxStamina = getPlayerMaxStamina();
-        player.stamina = player.maxStamina;
-      } else if (key === 'starterSize') {
-        player.maxStamina = getPlayerMaxStamina();
+        if (key === 'fuel') player.stamina = player.maxStamina;
+      }
+      if (key === 'starterSize') {
+        levelStart = getStarterSize();
+        nextLevel = Math.max(levelStart + 14, 24);
       }
 
       updateBotTargetCount();
@@ -921,6 +1336,35 @@
       updateShopPreview();
       updateHUD();
       toast('Upgrade bought', 'good', 1400);
+    }
+
+    function refundUpgrade(key) {
+      const cfg = UPGRADE_CONFIG[key];
+      if (!cfg) return;
+      if (upgrades[key] <= 0) {
+        toast('Nothing to refund', 'blue', 1300);
+        return;
+      }
+      const refundPrice = Math.floor(upgradePrice(cfg.base, upgrades[key] - 1) * 0.75);
+      upgrades[key] -= 1;
+      money += refundPrice;
+      saveMoney();
+      saveUpgrades();
+
+      if (key === 'fuel' || key === 'starterSize' || key === 'coins') {
+        player.maxStamina = getPlayerMaxStamina();
+        player.stamina = Math.min(player.stamina, player.maxStamina);
+      }
+      if (key === 'starterSize') {
+        levelStart = getStarterSize();
+        nextLevel = Math.max(levelStart + 14, 24);
+      }
+
+      updateBotTargetCount();
+      refreshUpgradeUI();
+      updateShopPreview();
+      updateHUD();
+      toast(`Refunded ${key}`, 'blue', 1400);
     }
 
     function syncIconPreviews() {
@@ -1025,10 +1469,36 @@
         });
     }
 
+    function loadCheatManifest() {
+      return fetch(CHEAT_MANIFEST_URL, { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('cheat manifest missing')))
+        .then(json => {
+          cheatManifest = json && Array.isArray(json.items) ? json : { items: [] };
+        })
+        .catch(() => {
+          cheatManifest = {
+            items: [
+              { uid: 'SkyeMoz', reward: 600 },
+              { uid: 'AmongUs', reward: 550 },
+              { uid: 'ZynixStudio', reward: 7000 },
+              { uid: 'JesusIsKing', reward: 100000 },
+              { uid: 'GodBless', reward: 55000 },
+              { uid: 'VoidiousIO', reward: 2500 }
+            ]
+          };
+        });
+    }
+
     function findShopItem(uid) {
       const q = normalizeName(uid).toLowerCase();
       if (!q) return null;
       return (shopManifest.items || []).find(item => normalizeName(item.uid).toLowerCase() === q) || null;
+    }
+
+    function findCheatItem(code) {
+      const q = normalizeName(code).toLowerCase();
+      if (!q) return null;
+      return (cheatManifest.items || []).find(item => normalizeName(item.uid).toLowerCase() === q) || null;
     }
 
     function updateShopPreview() {
@@ -1053,6 +1523,27 @@
       selectedShopFileUrl = `${SHOP_BASE_URL}${item.file || item.uid}`;
       itemStatus.textContent = `Found: ${item.uid}\nFile: ${item.file || item.uid}\nPrice: ${price} money\nStatus: ${canBuy ? 'Buyable' : 'Not enough money'}`;
       buyBtn.className = canBuy ? 'buyGood' : 'buyBad';
+    }
+
+    function updateCheatPreview() {
+      const code = normalizeName(cheatInput.value);
+      const item = findCheatItem(code);
+
+      if (!code) {
+        cheatStatus.textContent = 'Enter a cheat code to claim coins.';
+        cheatRedeemBtn.className = 'buyGood';
+        return;
+      }
+
+      if (!item) {
+        cheatStatus.textContent = `Not found: ${code}\nThat code is not listed in settings/cheat/manifest.json.`;
+        cheatRedeemBtn.className = 'buyBad';
+        return;
+      }
+
+      const reward = Number(item.reward ?? item.coins ?? item.amount ?? 0);
+      cheatStatus.textContent = `Found: ${item.uid}\nReward: ${reward} coins\nStatus: Ready to redeem`;
+      cheatRedeemBtn.className = 'buyGood';
     }
 
     function downloadFile(url, filename) {
@@ -1089,9 +1580,32 @@
       updateHUD();
     }
 
+    function redeemCheatCode() {
+      updateCheatPreview();
+      const code = normalizeName(cheatInput.value);
+      const item = findCheatItem(code);
+      if (!item) {
+        playPositionalSound(sounds.error, player.x, player.y, 1200);
+        toast('Invalid cheat code.', 'bad');
+        return;
+      }
+      const reward = Number(item.reward ?? item.coins ?? item.amount ?? 0);
+      if (!reward || reward <= 0) {
+        playPositionalSound(sounds.error, player.x, player.y, 1200);
+        toast('Cheat code has no reward.', 'bad');
+        return;
+      }
+      addMoney(reward, false);
+      playPositionalSound(sounds.buy, player.x, player.y, 1200);
+      cheatStatus.textContent = `Redeemed: ${item.uid}\n+${reward} coins added to your balance.`;
+      toast(`+${reward} coins`, 'good');
+      updateCheatPreview();
+      updateHUD();
+    }
+
     function spawnCrateNotice(x, y) {
       if (performance.now() < worldReadyAt) return;
-      toast('Crate just spawned!', 'blue', 1600);
+      toast('Crate spawned: one power inside', 'blue', 1600);
       espLines.push({
         x1: player.x, y1: player.y, x2: x, y2: y,
         life: 240,
@@ -1100,13 +1614,11 @@
     }
 
     function pickRandomPower() {
-      const arr = [
-        { type: 'speed', name: 'Speed', duration: Math.floor(rand(60 * 60, 5 * 60 * 60)) },
-        { type: 'size', name: '+Size', amount: Math.floor(rand(1, 9999)) },
-        { type: 'fuel', name: 'Speed Fuel +99', amount: 99 },
-        { type: 'shield', name: 'Blue Shield', duration: 10 * 60 }
-      ];
-      return arr[Math.floor(Math.random() * arr.length)];
+      const roll = Math.random();
+      if (roll < 0.38) return { type: 'size', name: '+Size', amount: Math.floor(rand(14, 42)) };
+      if (roll < 0.68) return { type: 'fuel', name: 'Fuel', amount: Math.floor(rand(18, 34)) };
+      if (roll < 0.90) return { type: 'speed', name: 'Speed', duration: Math.floor(rand(8 * 60, 14 * 60)) };
+      return { type: 'shield', name: 'Blue Shield', duration: Math.floor(rand(6 * 60, 10 * 60)) };
     }
 
     function spawnTimedCrate(forceNear = false) {
@@ -1140,38 +1652,62 @@
       if (budget <= 0) return;
 
       const arr = [];
-      const far = Math.hypot(cx, cy);
-      const baseFoodCount = clamp(Math.floor((18 + far * 1.05 + rand(0, 10)) * getFoodCountMultiplier()), 12, 160);
+      const seed = chunkSeed(cx, cy);
+      const rnd = mulberry32(seed);
+      const rr = (min, max) => rnd() * (max - min) + min;
+      const far = Math.hypot(wrapChunkCoord(cx) - WORLD.loopChunks / 2, wrapChunkCoord(cy) - WORLD.loopChunks / 2);
+      const baseFoodCount = clamp(Math.floor((20 + far * 1.15 + rr(0, 10)) * (1 + upgrades.droplets * 0.12)), 12, 175);
       const foodCount = Math.min(baseFoodCount, Math.max(10, Math.floor(budget * 0.75)));
-      const sizeBoost = getFoodSizeScale() * (1 + Math.min(far * 0.03, 3));
-      const bigChance = clamp(0.08 + far * 0.003, 0.08, 0.36);
+      const sizeBoost = (1 + Math.log10(player.r + 10) * 0.55 + upgrades.droplets * 0.05) * (1 + Math.min(far * 0.03, 3));
       const gemChance = getGemChance();
 
+      const dropletTypes = [
+        { key: 'basic', minR: 2, maxR: 5, color: '#6dff7a', weight: 56, coin: 1, growth: 0.03 },
+        { key: 'mint', minR: 3, maxR: 6, color: '#9afc9f', weight: 20, coin: 2, growth: 0.035 },
+        { key: 'amber', minR: 4, maxR: 8, color: '#ffd36f', weight: 12, coin: 3, growth: 0.045 },
+        { key: 'azure', minR: 5, maxR: 10, color: '#7dd8ff', weight: 8, coin: 4, growth: 0.05 },
+        { key: 'violet', minR: 7, maxR: 14, color: '#c38bff', weight: 4, coin: 6, growth: 0.06 }
+      ];
+      const totalWeight = dropletTypes.reduce((a, b) => a + b.weight, 0);
+      const chooseDropletType = () => {
+        const roll = rnd() * totalWeight;
+        let acc = 0;
+        for (const t of dropletTypes) {
+          acc += t.weight;
+          if (roll <= acc) return t;
+        }
+        return dropletTypes[0];
+      };
+
       for (let i = 0; i < foodCount; i++) {
-        const isBig = Math.random() < bigChance;
-        const r = isBig ? rand(8, 18) * sizeBoost : rand(2, 5) * sizeBoost;
+        const type = chooseDropletType();
+        const isBig = rnd() < clamp(0.10 + far * 0.003, 0.10, 0.42);
+        const r = clamp((rr(type.minR, type.maxR) * sizeBoost) * (isBig ? 1.75 : 1), 2, 34);
         const food = {
-          x: cx * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20),
-          y: cy * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20),
+          x: cx * WORLD.chunkSize + rr(20, WORLD.chunkSize - 20),
+          y: cy * WORLD.chunkSize + rr(20, WORLD.chunkSize - 20),
           r,
-          vx: rand(-0.35, 0.35),
-          vy: rand(-0.35, 0.35),
+          vx: rr(-0.35, 0.35),
+          vy: rr(-0.35, 0.35),
           chunkX: cx,
           chunkY: cy,
           chunkKey: key,
           big: isBig,
-          color: sizeColor(r),
-          kind: 'food'
+          color: type.color,
+          kind: 'food',
+          dropletType: type.key,
+          coinValue: type.coin + (isBig ? 1 : 0),
+          growthValue: type.growth
         };
         arr.push(food);
         foods.push(food);
       }
 
-      const gemCount = Math.random() < gemChance ? 1 + (Math.random() < 0.5 ? 1 : 0) : 0;
+      const gemCount = rnd() < gemChance ? 1 + (rnd() < 0.5 ? 1 : 0) : 0;
       for (let g = 0; g < gemCount; g++) {
         const gem = {
-          x: cx * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35),
-          y: cy * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35),
+          x: cx * WORLD.chunkSize + rr(35, WORLD.chunkSize - 35),
+          y: cy * WORLD.chunkSize + rr(35, WORLD.chunkSize - 35),
           r: clamp((9 + Math.log10(player.r + 10) * 2 + upgrades.gems * 0.15) * getGemValueMultiplier(), 9, 34),
           chunkX: cx,
           chunkY: cy,
@@ -1368,9 +1904,10 @@
 
     function applyPowerLoot(power, x, y) {
       if (!power) return;
+      playPowerSound(x, y);
       if (power.type === 'speed') {
         player.speedBoostTime = power.duration;
-        player.speedBoostMult = 1.25;
+        player.speedBoostMult = 1.18;
         toast('PowerLoot: Speed', 'blue');
       } else if (power.type === 'size') {
         player.r += power.amount;
@@ -1380,7 +1917,7 @@
       } else if (power.type === 'fuel') {
         player.maxStamina = Math.min(999999, player.maxStamina + power.amount);
         player.stamina = Math.min(player.maxStamina, player.stamina + power.amount);
-        toast('PowerLoot: Speed Fuel +99', 'blue');
+        toast(`PowerLoot: Fuel +${power.amount}`, 'blue');
       } else if (power.type === 'shield') {
         player.shieldTime = Math.max(player.shieldTime, power.duration);
         toast('PowerLoot: Blue Shield', 'blue');
@@ -1444,9 +1981,8 @@
         if (f.kind === 'food') {
           player.r += f.big ? f.r * 0.08 : f.r * 0.03;
           player.maxStamina = getPlayerMaxStamina();
-          addMoney(f.big ? Math.max(1, Math.floor(f.r * 0.06)) : 1);
+          addMoney(f.big ? Math.max(1, Math.floor((f.coinValue || 1) + f.r * 0.06)) : (f.coinValue || 1));
           player.stamina = Math.min(player.maxStamina, player.stamina + Math.max(1, Math.floor(f.r * 0.12)));
-          playPositionalSound(sounds.eat, f.x, f.y, 1200);
           drawDotBurst(f.x, f.y, f.big ? 12 : 7, f.color, f.big ? 1.2 : 1);
           foods.splice(i, 1);
         } else {
@@ -1477,7 +2013,6 @@
         if (d < bot.r + f.r * 0.78) {
           bot.r += f.big ? f.r * 0.06 : f.r * 0.03;
           drawDotBurst(f.x, f.y, f.big ? 8 : 5, f.color, f.big ? 1 : 0.8);
-          playPositionalSound(sounds.eat, f.x, f.y, 1200);
           foods.splice(i, 1);
           return true;
         }
@@ -1676,8 +2211,41 @@
       }
     }
 
+
     function drawFoods() {
       for (const f of foods) {
+        if (f.kind === 'food') {
+          const type = f.dropletType || 'basic';
+          ctx.save();
+          ctx.shadowColor = f.color || '#fff';
+          ctx.shadowBlur = type === 'azure' || type === 'violet' ? 12 : 6;
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+          ctx.fillStyle = f.color || '#6dff7a';
+          ctx.fill();
+          if (type !== 'basic') {
+            ctx.strokeStyle = 'rgba(255,255,255,.45)';
+            ctx.lineWidth = Math.max(1, f.r * 0.12);
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.r + 1.2, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+          continue;
+        }
+        if (f.kind === 'gem') {
+          ctx.save();
+          ctx.shadowColor = 'rgba(98,185,255,.35)';
+          ctx.shadowBlur = 10;
+          drawCircle(f.x, f.y, f.r, '#70dcff', gemImg);
+          ctx.strokeStyle = 'rgba(255,255,255,.45)';
+          ctx.lineWidth = Math.max(1, f.r * 0.08);
+          ctx.beginPath();
+          ctx.arc(f.x, f.y, f.r + 1.5, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+          continue;
+        }
         if (f.kind === 'crate') {
           ctx.save();
           const s = f.r * 2.2;
@@ -1707,27 +2275,11 @@
           ctx.restore();
           continue;
         }
-        if (f.kind === 'gem') {
-          ctx.save();
-          ctx.shadowColor = 'rgba(98,185,255,.35)';
-          ctx.shadowBlur = 10;
-          drawCircle(f.x, f.y, f.r, '#70dcff', gemImg);
-          ctx.strokeStyle = 'rgba(255,255,255,.45)';
-          ctx.lineWidth = Math.max(1, f.r * 0.08);
-          ctx.beginPath();
-          ctx.arc(f.x, f.y, f.r + 1.5, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-          continue;
-        }
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-        ctx.fillStyle = f.color;
-        ctx.fill();
       }
     }
 
     function drawBots() {
+
       for (const bot of bots) {
         ctx.save();
         ctx.globalAlpha = bot.alpha;
@@ -1761,7 +2313,7 @@
         ctx.lineWidth = 1.5;
         ctx.strokeRect(boxX, boxY, boxW, boxH);
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = editorState.playerText || '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(label, bot.x, boxY + boxH / 2 + 0.5);
@@ -1786,7 +2338,7 @@
     }
 
     function drawPlayer() {
-      drawCircle(player.x, player.y, player.r, player.shieldTime > 0 ? '#a7e7ff' : '#ffffff', playerIconImage);
+      drawCircle(player.x, player.y, player.r, player.shieldTime > 0 ? '#a7e7ff' : (editorState.playerCircle || '#ffffff'), playerIconImage);
       if (player.shieldTime > 0) {
         ctx.save();
         ctx.strokeStyle = 'rgba(98,185,255,.9)';
@@ -1804,7 +2356,7 @@
       ctx.fillText(playerName || 'Player', player.x, player.y - player.r - 34);
       ctx.restore();
 
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = editorState.playerText || '#ffffff';
       ctx.font = `${Math.max(12, Math.min(28, player.r * 0.34))}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -1852,8 +2404,11 @@
 
       cam.x += (player.x - cam.x) * 0.08;
       cam.y += (player.y - cam.y) * 0.08;
-      const targetZoom = 1.85 / (1 + Math.pow(Math.max(player.r, 1) / 120, 0.58));
+      manualZoom += (manualZoomTarget - manualZoom) * 0.12;
+      const baseZoom = 1.85 / (1 + Math.pow(Math.max(player.r, 1) / 120, 0.58));
+      const targetZoom = baseZoom * manualZoom;
       cam.zoom += (targetZoom - cam.zoom) * 0.08;
+      cam.zoom = clamp(cam.zoom, 0.0001, 2.8);
 
       ctx.save();
       ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -1908,6 +2463,8 @@
       uiNextRaid.textContent = formatCountdown(waveRaidNextTime - now);
       uiFill.style.width = `${levelProgress() * 100}%`;
       uiStaminaFill.style.width = `${clamp(player.stamina / Math.max(1, player.maxStamina), 0, 1) * 100}%`;
+      moneyMiniValue.textContent = Math.floor(money).toString();
+      moneyMiniFill.style.transform = `scaleX(${clamp((Math.log10(Math.max(10, money + 10)) / 6), 0.12, 1)})`;
       sprintBtn.textContent = player.sprinting ? 'Fuel ON' : 'Fuel';
       sprintBtn.classList.toggle('on', player.sprinting);
       refreshUpgradeUI();
@@ -1948,8 +2505,11 @@
       localStorage.removeItem(ICON_KEY);
       localStorage.removeItem(SOUND_KEY);
       localStorage.removeItem(NAME_KEY);
+      localStorage.removeItem(EDITOR_KEY);
       money = 0;
       upgrades = { ...DEFAULT_UPGRADES };
+      upgrades = sanitizeUpgrades(upgrades);
+      editorState = { ...DEFAULT_EDITOR_STATE };
       iconState = { ...DEFAULT_ICON_STATE };
       customIcons = { player: null, bot: null };
       playerName = 'SkyeMozYT';
@@ -1960,11 +2520,15 @@
       botIconImage = null;
       killCount = 0;
       level = 1;
+      manualZoom = 1;
+      manualZoomTarget = 1;
+      applyEditorTheme();
       updateBotTargetCount();
       saveMoney();
       refreshUpgradeUI();
       syncIconPreviews();
       updateShopPreview();
+      updateCheatPreview();
       updateHUD();
       toast('Save reset', 'blue', 1800);
     }
@@ -1972,6 +2536,7 @@
     function openRedeem() {
       redeemOverlay.style.display = 'flex';
       updateShopPreview();
+      updateCheatPreview();
     }
     function closeRedeem() {
       redeemOverlay.style.display = 'none';
@@ -1981,7 +2546,25 @@
       sprintBtn.classList.toggle('on', player.sprinting);
     }
     function toggleMenu() {
-      uiBody.classList.toggle('collapsed');
+      const collapsed = !uiBody.classList.contains('collapsed');
+      uiBody.classList.toggle('collapsed', collapsed);
+      ui.classList.toggle('collapsed', collapsed);
+      menuBtn.textContent = collapsed ? 'Unhide' : 'Hide';
+    }
+
+    function adjustZoom(step) {
+      const factor = step > 0 ? 0.92 : 1.08;
+      manualZoomTarget = clamp(manualZoomTarget * factor, 0.0001, 3.2);
+    }
+
+    function startZoomHold(step) {
+      adjustZoom(step);
+      stopZoomHold();
+      zoomHold = setInterval(() => adjustZoom(step), 80);
+    }
+    function stopZoomHold() {
+      if (zoomHold) clearInterval(zoomHold);
+      zoomHold = null;
     }
     function openDeathMenu() {
       gameState = 'dead';
@@ -2029,17 +2612,70 @@
     closeRedeemBtn.addEventListener('click', closeRedeem);
     itemInput.addEventListener('input', updateShopPreview);
     buyBtn.addEventListener('click', buySelectedItem);
-    upStarterBtn.addEventListener('click', () => buyUpgrade('starterSize', 40));
-    upSpeedBtn.addEventListener('click', () => buyUpgrade('speed', 45));
-    upMagnetBtn.addEventListener('click', () => buyUpgrade('magnet', 35));
-    upBotsBtn.addEventListener('click', () => buyUpgrade('bots', 60));
-    upDropletsBtn.addEventListener('click', () => buyUpgrade('droplets', 55));
-    upGemsBtn.addEventListener('click', () => buyUpgrade('gems', 65));
-    upFuelBtn.addEventListener('click', () => buyUpgrade('fuel', 50));
+    cheatInput.addEventListener('input', updateCheatPreview);
+    cheatRedeemBtn.addEventListener('click', redeemCheatCode);
+    cheatCloseBtn.addEventListener('click', closeRedeem);
+    upStarterBtn.addEventListener('click', () => buyUpgrade('starterSize'));
+    upSpeedBtn.addEventListener('click', () => buyUpgrade('speed'));
+    upMagnetBtn.addEventListener('click', () => buyUpgrade('magnet'));
+    upBotsBtn.addEventListener('click', () => buyUpgrade('bots'));
+    upDropletsBtn.addEventListener('click', () => buyUpgrade('droplets'));
+    upGemsBtn.addEventListener('click', () => buyUpgrade('gems'));
+    upFuelBtn.addEventListener('click', () => buyUpgrade('fuel'));
+    upCoinsBtn.addEventListener('click', () => buyUpgrade('coins'));
+    buyStarterBtn.addEventListener('click', () => buyUpgrade('starterSize'));
+    buySpeedBtn.addEventListener('click', () => buyUpgrade('speed'));
+    buyMagnetBtn.addEventListener('click', () => buyUpgrade('magnet'));
+    buyBotsBtn.addEventListener('click', () => buyUpgrade('bots'));
+    buyDropletsBtn.addEventListener('click', () => buyUpgrade('droplets'));
+    buyGemsBtn.addEventListener('click', () => buyUpgrade('gems'));
+    buyFuelBtn.addEventListener('click', () => buyUpgrade('fuel'));
+    buyCoinsBtn.addEventListener('click', () => buyUpgrade('coins'));
+    refundStarterBtn.addEventListener('click', () => refundUpgrade('starterSize'));
+    refundSpeedBtn.addEventListener('click', () => refundUpgrade('speed'));
+    refundMagnetBtn.addEventListener('click', () => refundUpgrade('magnet'));
+    refundBotsBtn.addEventListener('click', () => refundUpgrade('bots'));
+    refundDropletsBtn.addEventListener('click', () => refundUpgrade('droplets'));
+    refundGemsBtn.addEventListener('click', () => refundUpgrade('gems'));
+    refundFuelBtn.addEventListener('click', () => refundUpgrade('fuel'));
+    refundCoinsBtn.addEventListener('click', () => refundUpgrade('coins'));
     saveIconsBtn.addEventListener('click', saveIcons);
     resetIconsBtn.addEventListener('click', resetIcons);
     saveSoundsBtn.addEventListener('click', saveSounds);
     resetSoundsBtn.addEventListener('click', resetSounds);
+    saveEditorBtn.addEventListener('click', saveEditor);
+    resetEditorBtn.addEventListener('click', resetEditor);
+    circleColorInput.addEventListener('input', () => { editorState.playerCircle = circleColorInput.value; applyEditorTheme(); });
+    playerTextColorInput.addEventListener('input', () => { editorState.playerText = playerTextColorInput.value; applyEditorTheme(); });
+    backgroundColorInput.addEventListener('input', () => {
+      editorState.background = backgroundColorInput.value;
+      const hex = backgroundColorInput.value || DEFAULT_EDITOR_STATE.background;
+      const glow = hex;
+      editorState.glow = glow;
+      applyEditorTheme();
+    });
+
+    const bindHoldZoom = (btn, step) => {
+      let activePointer = null;
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        activePointer = e.pointerId;
+        btn.setPointerCapture?.(e.pointerId);
+        startZoomHold(step);
+      }, { passive: false });
+      const end = e => {
+        if (activePointer !== null && e && e.pointerId !== activePointer) return;
+        activePointer = null;
+        stopZoomHold();
+      };
+      btn.addEventListener('pointerup', end);
+      btn.addEventListener('pointercancel', end);
+      btn.addEventListener('lostpointercapture', end);
+      btn.addEventListener('pointerleave', end);
+    };
+    bindHoldZoom(zoomInBtn, -1);
+    bindHoldZoom(zoomOutBtn, 1);
 
     playerNameInput.addEventListener('input', () => {
       playerName = String(playerNameInput.value || '').trim().slice(0, 24) || 'Player';
@@ -2069,7 +2705,9 @@
     buySoundInput.addEventListener('change', () => setSoundFromInput('buy', buySoundInput.files && buySoundInput.files[0]));
     errorSoundInput.addEventListener('change', () => setSoundFromInput('error', errorSoundInput.files && errorSoundInput.files[0]));
     clickSoundInput.addEventListener('change', () => setSoundFromInput('click', clickSoundInput.files && clickSoundInput.files[0]));
+    powerSoundInput.addEventListener('change', () => setSoundFromInput('power', powerSoundInput.files && powerSoundInput.files[0]));
 
+    applyEditorTheme();
     syncIconPreviews();
     refreshUpgradeUI();
 
@@ -2116,6 +2754,9 @@
       setKeyState(e.key, false);
       if (e.key === 'Shift') toggleSprint(false);
     });
+
+
+    window.addEventListener('blur', stopZoomHold);
 
     if (isTouch) {
       joyBase.style.display = 'block';
@@ -2217,9 +2858,11 @@
     }
 
     function loadAllAndStart() {
-      Promise.allSettled([loadManifest()]).finally(() => {
+      Promise.allSettled([loadManifest(), loadCheatManifest()]).finally(() => {
+        applyEditorTheme();
         refreshUpgradeUI();
         syncIconPreviews();
+        updateCheatPreview();
         beginLoading('Generating infinite chunks.', () => {
           beginRun();
           toast('Shift = Sprint', 'blue', 1800);
@@ -2231,6 +2874,7 @@
     console.assert(typeof beginRun === 'function', 'beginRun missing');
     console.assert(typeof updateWorld === 'function', 'updateWorld missing');
 
+    menuBtn.textContent = 'Hide';
     loadAllAndStart();
     requestAnimationFrame(gameLoop);
   })();
