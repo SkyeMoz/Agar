@@ -5,63 +5,380 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Circle IO v13</title>
   <style>
-    :root{--bg:#0b0b12;--panel:rgba(255,255,255,.07);--stroke:rgba(255,255,255,.08);--text:#fff;--muted:rgba(255,255,255,.68);--accent:#ff8a3d;--good:#58ff72;--bad:#ff5e5e;--blue:#62b9ff}
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at top,#17111a,var(--bg));font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);position:fixed;inset:0}
+    :root{
+      --bg:#0b0b12;
+      --panel:rgba(255,255,255,.07);
+      --stroke:rgba(255,255,255,.08);
+      --text:#fff;
+      --muted:rgba(255,255,255,.68);
+      --accent:#ff8a3d;
+      --good:#58ff72;
+      --bad:#ff5e5e;
+      --blue:#62b9ff
+    }
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+      user-select:none
+    }
+    html,body{
+      margin:0;
+      width:100%;
+      height:100%;
+      overflow:hidden;
+      background:radial-gradient(circle at top,#17111a,var(--bg));
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      color:var(--text);
+      position:fixed;
+      inset:0
+    }
     body{touch-action:none}
-    canvas{position:fixed;inset:0;width:100vw;height:100dvh;display:block}
+    canvas{
+      position:fixed;
+      inset:0;
+      width:100vw;
+      height:100dvh;
+      display:block
+    }
 
-    #ui{position:fixed;top:calc(10px + env(safe-area-inset-top, 0px));left:calc(10px + env(safe-area-inset-left, 0px));z-index:30;min-width:290px;padding:12px;border-radius:14px;background:var(--panel);border:1px solid var(--stroke);backdrop-filter:blur(10px);box-shadow:0 14px 35px rgba(0,0,0,.25)}
-    #uiTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-    #uiTop b{font-size:14px;letter-spacing:.02em}
-    #menuBtn,#f3Btn,#sprintBtn{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--text);border-radius:10px;padding:6px 9px;font-weight:800;cursor:pointer}
-    #sprintBtn.on{background:rgba(98,185,255,.16);border-color:rgba(98,185,255,.4)}
+    #ui{
+      position:fixed;
+      top:calc(10px + env(safe-area-inset-top, 0px));
+      left:calc(10px + env(safe-area-inset-left, 0px));
+      z-index:30;
+      min-width:290px;
+      padding:12px;
+      border-radius:14px;
+      background:var(--panel);
+      border:1px solid var(--stroke);
+      backdrop-filter:blur(10px);
+      box-shadow:0 14px 35px rgba(0,0,0,.25)
+    }
+    #uiTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px
+    }
+    #uiTop b{
+      font-size:14px;
+      letter-spacing:.02em
+    }
+    #menuBtn,#f3Btn,#sprintBtn{
+      border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:10px;
+      padding:6px 9px;
+      font-weight:800;
+      cursor:pointer
+    }
+    #sprintBtn.on{
+      background:rgba(98,185,255,.16);
+      border-color:rgba(98,185,255,.4)
+    }
     #uiBody.collapsed{display:none}
-    .stat-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);margin-top:2px}
-    .stat-row .good{color:var(--good)} .stat-row .bad{color:var(--bad)} .stat-row .blue{color:var(--blue)}
-    #barWrap,#staminaWrap{width:100%;height:11px;border-radius:999px;overflow:hidden;background:#1b1b25;margin-top:8px}
+    .stat-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-size:13px;
+      color:var(--muted);
+      margin-top:2px
+    }
+    .stat-row .good{color:var(--good)}
+    .stat-row .bad{color:var(--bad)}
+    .stat-row .blue{color:var(--blue)}
+    #barWrap,#staminaWrap{
+      width:100%;
+      height:11px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#1b1b25;
+      margin-top:8px
+    }
     #staminaWrap{background:#1b2230}
-    #fill{height:100%;width:10%;border-radius:999px;background:linear-gradient(90deg,#ffb36b,var(--accent));box-shadow:0 0 18px rgba(255,138,61,.3)}
-    #staminaFill{height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,#8fe0ff,#2f7dff);box-shadow:0 0 18px rgba(98,185,255,.3)}
-    #debugPanel{margin-top:10px;padding:10px;border-radius:12px;background:rgba(0,0,0,.26);border:1px solid rgba(255,255,255,.07);display:none;max-height:40vh;overflow:auto}
-    #debugPanel h3{margin:0 0 8px;font-size:13px;color:#ffcf9f}
-    #debugPanel .line{font-size:12px;line-height:1.4;color:rgba(255,255,255,.85);margin:2px 0;white-space:nowrap}
+    #fill{
+      height:100%;
+      width:10%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#ffb36b,var(--accent));
+      box-shadow:0 0 18px rgba(255,138,61,.3)
+    }
+    #staminaFill{
+      height:100%;
+      width:100%;
+      border-radius:999px;
+      background:linear-gradient(90deg,#8fe0ff,#2f7dff);
+      box-shadow:0 0 18px rgba(98,185,255,.3)
+    }
+    #debugPanel{
+      margin-top:10px;
+      padding:10px;
+      border-radius:12px;
+      background:rgba(0,0,0,.26);
+      border:1px solid rgba(255,255,255,.07);
+      display:none;
+      max-height:40vh;
+      overflow:auto
+    }
+    #debugPanel h3{
+      margin:0 0 8px;
+      font-size:13px;
+      color:#ffcf9f
+    }
+    #debugPanel .line{
+      font-size:12px;
+      line-height:1.4;
+      color:rgba(255,255,255,.85);
+      margin:2px 0;
+      white-space:nowrap
+    }
 
-    #toastWrap{position:fixed;right:12px;top:calc(12px + env(safe-area-inset-top, 0px));z-index:70;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-    .toast{min-width:220px;max-width:min(360px,calc(100vw - 24px));padding:12px 14px;border-radius:14px;background:rgba(13,13,20,.92);border:1px solid rgba(255,255,255,.08);box-shadow:0 14px 35px rgba(0,0,0,.32);color:#fff;font-size:13px;line-height:1.35;animation:toastIn .18s ease}
-    .toast.good{border-color:rgba(88,255,114,.25)} .toast.bad{border-color:rgba(255,94,94,.28)} .toast.blue{border-color:rgba(98,185,255,.35)}
-    @keyframes toastIn{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+    #toastWrap{
+      position:fixed;
+      right:12px;
+      top:calc(12px + env(safe-area-inset-top, 0px));
+      z-index:70;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      pointer-events:none
+    }
+    .toast{
+      min-width:220px;
+      max-width:min(360px,calc(100vw - 24px));
+      padding:12px 14px;
+      border-radius:14px;
+      background:rgba(13,13,20,.92);
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 14px 35px rgba(0,0,0,.32);
+      color:#fff;
+      font-size:13px;
+      line-height:1.35;
+      animation:toastIn .18s ease
+    }
+    .toast.good{border-color:rgba(88,255,114,.25)}
+    .toast.bad{border-color:rgba(255,94,94,.28)}
+    .toast.blue{border-color:rgba(98,185,255,.35)}
+    @keyframes toastIn{
+      from{opacity:0;transform:translateY(-10px) scale(.98)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
 
-    #joyBase{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);width:118px;height:118px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);display:none;z-index:35;touch-action:none;backdrop-filter:blur(8px)}
-    #joyStick{position:absolute;left:44px;top:44px;width:30px;height:30px;border-radius:50%;background:var(--accent);box-shadow:0 8px 22px rgba(255,138,61,.35)}
-    @media (pointer: coarse){#joyBase{display:block}} @media (pointer: fine){#joyBase{display:none !important}}
+    #joyBase{
+      position:fixed;
+      left:50%;
+      bottom:calc(20px + env(safe-area-inset-bottom, 0px));
+      transform:translateX(-50%);
+      width:118px;
+      height:118px;
+      border-radius:50%;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      display:none;
+      z-index:35;
+      touch-action:none;
+      backdrop-filter:blur(8px)
+    }
+    #joyStick{
+      position:absolute;
+      left:44px;
+      top:44px;
+      width:30px;
+      height:30px;
+      border-radius:50%;
+      background:var(--accent);
+      box-shadow:0 8px 22px rgba(255,138,61,.35)
+    }
+    @media (pointer: coarse){#joyBase{display:block}}
+    @media (pointer: fine){#joyBase{display:none !important}}
 
-    .overlay{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(5,5,10,.72);backdrop-filter:blur(12px);padding:20px}
-    .card{width:min(560px,100%);border-radius:22px;background:linear-gradient(180deg,rgba(24,18,13,.96),rgba(12,12,18,.96));border:1px solid rgba(255,255,255,.10);box-shadow:0 20px 55px rgba(0,0,0,.38);padding:22px;animation:pop .2s ease;text-align:center}
-    @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-    .card h2{margin:0 0 8px;font-size:24px} .card p{margin:0 0 16px;color:var(--muted);line-height:1.5}
-    .card button{border:0;border-radius:14px;min-height:48px;padding:0 16px;font-weight:800;cursor:pointer;background:linear-gradient(180deg,#ffb36b,var(--accent));color:#1a1007;box-shadow:0 10px 24px rgba(255,138,61,.22)}
-    .card .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .card .ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid rgba(255,255,255,.10);box-shadow:none}
-    .menuField{width:100%;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.06);color:var(--text);border-radius:14px;padding:14px 14px;outline:none;font-size:14px;margin:8px 0}
-    .menuLabel{text-align:left;color:var(--muted);font-size:13px;margin-top:10px}
-    .statusBox{margin-top:10px;padding:12px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22);text-align:left;min-height:48px;color:var(--muted);line-height:1.45;font-size:14px;white-space:pre-line}
-    .buyGood{background:linear-gradient(180deg,#6dff83,#2fd85d) !important;color:#07140a !important} .buyBad{background:linear-gradient(180deg,#ff7f7f,#ff4c4c) !important;color:#170707 !important}
+    .overlay{
+      position:fixed;
+      inset:0;
+      z-index:50;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(5,5,10,.72);
+      backdrop-filter:blur(12px);
+      padding:20px;
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      touch-action:pan-y
+    }
+    .card{
+      width:min(560px,100%);
+      max-height:min(92dvh,920px);
+      overflow:auto;
+      -webkit-overflow-scrolling:touch;
+      border-radius:22px;
+      background:linear-gradient(180deg,rgba(24,18,13,.96),rgba(12,12,18,.96));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:0 20px 55px rgba(0,0,0,.38);
+      padding:22px;
+      animation:pop .2s ease;
+      text-align:center
+    }
+    @keyframes pop{
+      from{opacity:0;transform:translateY(14px) scale(.98)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+    .card h2{margin:0 0 8px;font-size:24px}
+    .card p{margin:0 0 16px;color:var(--muted);line-height:1.5}
+    .card button{
+      border:0;
+      border-radius:14px;
+      min-height:48px;
+      padding:0 16px;
+      font-weight:800;
+      cursor:pointer;
+      background:linear-gradient(180deg,#ffb36b,var(--accent));
+      color:#1a1007;
+      box-shadow:0 10px 24px rgba(255,138,61,.22)
+    }
+    .card .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px
+    }
+    .card .ghost{
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:none
+    }
+    .menuField{
+      width:100%;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:14px;
+      padding:14px 14px;
+      outline:none;
+      font-size:14px;
+      margin:8px 0
+    }
+    .menuLabel{
+      text-align:left;
+      color:var(--muted);
+      font-size:13px;
+      margin-top:10px
+    }
+    .statusBox{
+      margin-top:10px;
+      padding:12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.22);
+      text-align:left;
+      min-height:48px;
+      color:var(--muted);
+      line-height:1.45;
+      font-size:14px;
+      white-space:pre-line
+    }
+    .buyGood{
+      background:linear-gradient(180deg,#6dff83,#2fd85d) !important;
+      color:#07140a !important
+    }
+    .buyBad{
+      background:linear-gradient(180deg,#ff7f7f,#ff4c4c) !important;
+      color:#170707 !important
+    }
 
-    .section{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
-    .iconPickers,.iconButtons{display:grid;gap:10px;margin-top:10px;grid-template-columns:1fr 1fr}
-    .previewRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    .previewBox{display:flex;align-items:center;justify-content:center;height:84px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);overflow:hidden}
-    .previewCircle{width:54px;height:54px;border-radius:50%;background:#fff;background-size:cover;background-position:center;box-shadow:0 0 0 4px rgba(255,255,255,.08) inset}
-    .smallNote{font-size:12px;color:var(--muted);margin-top:8px;text-align:left;line-height:1.4}
+    .section{
+      margin-top:14px;
+      padding-top:14px;
+      border-top:1px solid rgba(255,255,255,.08)
+    }
+    .iconPickers,.iconButtons{
+      display:grid;
+      gap:10px;
+      margin-top:10px;
+      grid-template-columns:1fr 1fr
+    }
+    .previewRow{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px
+    }
+    .previewBox{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:84px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      overflow:hidden
+    }
+    .previewCircle{
+      width:54px;
+      height:54px;
+      border-radius:50%;
+      background:#fff;
+      background-size:cover;
+      background-position:center;
+      box-shadow:0 0 0 4px rgba(255,255,255,.08) inset
+    }
+    .smallNote{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+      text-align:left;
+      line-height:1.4
+    }
 
-    .upgradeGrid{display:grid;gap:10px;margin-top:10px}
-    .upgradeBtn{width:100%;text-align:left;padding:14px 16px;border-radius:18px !important;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06)) !important;color:var(--text) !important;border:1px solid rgba(255,255,255,.10) !important;box-shadow:0 12px 28px rgba(0,0,0,.18) !important;display:grid;gap:4px}
-    .upgradeBtn .name{font-size:14px;font-weight:900;letter-spacing:.01em}
-    .upgradeBtn .value{font-size:12px;color:#ffd66b;font-weight:800}
-    .upgradeBtn .level{font-size:12px;color:var(--muted)}
+    .upgradeGrid{
+      display:grid;
+      gap:10px;
+      margin-top:10px
+    }
+    .upgradeBtn{
+      width:100%;
+      text-align:left;
+      padding:14px 16px;
+      border-radius:18px !important;
+      background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06)) !important;
+      color:var(--text) !important;
+      border:1px solid rgba(255,255,255,.10) !important;
+      box-shadow:0 12px 28px rgba(0,0,0,.18) !important;
+      display:grid;
+      gap:4px
+    }
+    .upgradeBtn .name{
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.01em
+    }
+    .upgradeBtn .value{
+      font-size:12px;
+      color:#ffd66b;
+      font-weight:800
+    }
+    .upgradeBtn .level{
+      font-size:12px;
+      color:var(--muted)
+    }
 
-    @media (max-width:640px){#ui{min-width:210px;max-width:calc(100vw - 20px)} .card .row,.iconPickers,.previewRow,.iconButtons{grid-template-columns:1fr}}
+    @media (max-width:640px){
+      #ui{
+        min-width:210px;
+        max-width:calc(100vw - 20px)
+      }
+      .card .row,.iconPickers,.previewRow,.iconButtons{
+        grid-template-columns:1fr
+      }
+      .card{
+        width:min(560px,100%);
+        padding:16px;
+        max-height:calc(100dvh - 28px)
+      }
+    }
   </style>
 </head>
 <body>
@@ -91,21 +408,41 @@
   <div id="toastWrap"></div>
   <div id="joyBase" aria-hidden="true"><div id="joyStick"></div></div>
 
-  <div id="loadingOverlay" class="overlay"><div class="card"><h2>Loading...</h2><p id="loadingText">Preparing the world.</p></div></div>
+  <div id="loadingOverlay" class="overlay">
+    <div class="card">
+      <h2>Loading...</h2>
+      <p id="loadingText">Preparing the world.</p>
+    </div>
+  </div>
 
   <div id="gameOverOverlay" class="overlay">
     <div class="card">
       <h2>You died</h2>
       <p id="gameOverText">Try again and grow bigger.</p>
-      <div class="row"><button id="retryBtn" type="button">Retry</button><button id="redeemBtn" type="button" class="ghost">Redeem</button></div>
+      <div class="row">
+        <button id="retryBtn" type="button">Retry</button>
+        <button id="redeemBtn" type="button" class="ghost">Redeem</button>
+      </div>
 
       <div class="section">
         <h2 style="font-size:18px;margin-bottom:6px;">Upgrade Mode</h2>
         <p style="margin-bottom:10px;">Buy upgrades here. Value and level are shown under each button.</p>
         <div class="upgradeGrid">
-          <button id="upStarterBtn" class="upgradeBtn" type="button"><div class="name">Starter Size</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upSpeedBtn" class="upgradeBtn" type="button"><div class="name">Speed</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
-          <button id="upMagnetBtn" class="upgradeBtn" type="button"><div class="name">Magnet Radius</div><div class="value">Value 🟡 0</div><div class="level">Lv 0 / 999</div></button>
+          <button id="upStarterBtn" class="upgradeBtn" type="button">
+            <div class="name">Starter Size</div>
+            <div class="value">Value 🟡 0</div>
+            <div class="level">Lv 0 / 999</div>
+          </button>
+          <button id="upSpeedBtn" class="upgradeBtn" type="button">
+            <div class="name">Speed</div>
+            <div class="value">Value 🟡 0</div>
+            <div class="level">Lv 0 / 999</div>
+          </button>
+          <button id="upMagnetBtn" class="upgradeBtn" type="button">
+            <div class="name">Magnet Radius</div>
+            <div class="value">Value 🟡 0</div>
+            <div class="level">Lv 0 / 999</div>
+          </button>
         </div>
         <div class="smallNote" id="upgradeNote">Starter size only applies when you retry.</div>
       </div>
@@ -114,11 +451,23 @@
         <h2 style="font-size:18px;margin-bottom:6px;">Icon Editor</h2>
         <p style="margin-bottom:10px;">Change your circle icon and bot icon using image files.</p>
         <div class="iconPickers">
-          <div><div class="menuLabel">Player icon</div><input id="playerIconInput" class="menuField" type="file" accept="image/*" /></div>
-          <div><div class="menuLabel">Bot icon</div><input id="botIconInput" class="menuField" type="file" accept="image/*" /></div>
+          <div>
+            <div class="menuLabel">Player icon</div>
+            <input id="playerIconInput" class="menuField" type="file" accept="image/*" />
+          </div>
+          <div>
+            <div class="menuLabel">Bot icon</div>
+            <input id="botIconInput" class="menuField" type="file" accept="image/*" />
+          </div>
         </div>
-        <div class="previewRow"><div class="previewBox"><div id="playerPreview" class="previewCircle"></div></div><div class="previewBox"><div id="botPreview" class="previewCircle"></div></div></div>
-        <div class="iconButtons"><button id="saveIconsBtn" type="button">Save</button><button id="resetIconsBtn" type="button" class="ghost">Reset</button></div>
+        <div class="previewRow">
+          <div class="previewBox"><div id="playerPreview" class="previewCircle"></div></div>
+          <div class="previewBox"><div id="botPreview" class="previewCircle"></div></div>
+        </div>
+        <div class="iconButtons">
+          <button id="saveIconsBtn" type="button">Save</button>
+          <button id="resetIconsBtn" type="button" class="ghost">Reset</button>
+        </div>
       </div>
     </div>
   </div>
@@ -130,7 +479,10 @@
       <div class="menuLabel">Enter UID.</div>
       <input id="itemInput" class="menuField" type="text" placeholder="example_uid" autocomplete="off" />
       <div id="itemStatus" class="statusBox">Enter a UID to check price and file.</div>
-      <div class="row" style="margin-top:12px;"><button id="buyBtn" type="button" class="buyBad">Buy</button><button id="closeRedeemBtn" type="button" class="ghost">Close</button></div>
+      <div class="row" style="margin-top:12px;">
+        <button id="buyBtn" type="button" class="buyBad">Buy</button>
+        <button id="closeRedeemBtn" type="button" class="ghost">Close</button>
+      </div>
     </div>
   </div>
 
@@ -139,8 +491,10 @@
   <script>
   (() => {
     'use strict';
+
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
+
     function resizeCanvas() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -197,6 +551,8 @@
     const SHOP_MANIFEST_URL = 'shop/manifest.json';
     const SHOP_BASE_URL = 'shop/';
     const WORLD = { chunkSize: 700, loadRadius: 3, keepRadius: 5 };
+    const MAX_BOTS = 64;
+    const MAX_EFFECTS = 260;
     const BOT_NAMES = [
       'Alpha','Bravo','Cobra','Delta','Echo','Falcon','Ghost','Hunter','Ion','Jinx','Knight','Luna','Nova','Orion','Pixel','Quark','Raven','Sting','Titan','Umbra','Viper','Wolf','Zephyr','Aster','Blaze','Comet','Drift','Ember','Frost','Glint','Haze','Indigo','Jade','Kilo','Lumen','Mira','Nox','Onyx','Prism','Quest','Rift','Solar','Talon','Ultra','Vector','Wisp','Xeno','Yara','Zion','Amber','Beryl','Chrome','Dusk','Eon','Flux','Glory','Halo','Iris','Jolt','Karma','Lyric'
     ];
@@ -217,9 +573,22 @@
     function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
     function rand(min, max) { return Math.random() * (max - min) + min; }
     function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
-    function loadJson(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } }
-    function saveJson(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
-    function saveMoney() { localStorage.setItem(MONEY_KEY, String(Math.floor(money))); uiMoney.textContent = String(Math.floor(money)); }
+
+    function loadJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+    function saveJson(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+    function saveMoney() {
+      localStorage.setItem(MONEY_KEY, String(Math.floor(money)));
+      uiMoney.textContent = String(Math.floor(money));
+    }
 
     function toast(message, kind = 'good', ms = 2200) {
       const el = document.createElement('div');
@@ -263,7 +632,10 @@
       });
     }
 
-    function normalizeName(s) { return String(s || '').trim().replace(/^\/+/, ''); }
+    function normalizeName(s) {
+      return String(s || '').trim().replace(/^\/+/, '');
+    }
+
     function sizeColor(r) {
       if (r < 8) return '#6dff7a';
       if (r < 14) return '#b8ff6a';
@@ -277,6 +649,10 @@
       return '#ffffff';
     }
 
+    function computeNextLevelThreshold(prev) {
+      return Math.floor(prev * 1.22 + 16);
+    }
+
     let money = Number(localStorage.getItem(MONEY_KEY) || 0);
     let upgrades = loadJson(UPGRADE_KEY, { ...DEFAULT_UPGRADES });
     let iconState = loadJson(ICON_KEY, { ...DEFAULT_ICON_STATE });
@@ -287,7 +663,11 @@
     let selectedShopItem = null;
     let selectedShopFileUrl = null;
 
-    let player = { x: 0, y: 0, r: 10, speed: 4, sprinting: false, stamina: 100, maxStamina: 100, shieldTime: 0, speedBoostTime: 0, speedBoostMult: 1 };
+    let player = {
+      x: 0, y: 0, r: 10, speed: 4, sprinting: false,
+      stamina: 100, maxStamina: 100,
+      shieldTime: 0, speedBoostTime: 0, speedBoostMult: 1
+    };
     let cam = { x: 0, y: 0, zoom: 1 };
     let gameState = 'loading';
     let debugEnabled = false;
@@ -312,14 +692,32 @@
     let waveRaidNextTime = performance.now() + 20 * 60 * 1000;
     let manifestLoaded = false;
 
-    function upgradePrice(base, lvl) { return Math.min(999999999, Math.floor(base * Math.pow(1.22, lvl))); }
-    function getStarterSize() { return 10 + upgrades.starterSize * 2; }
-    function getSpeedBonus() { return upgrades.speed * 0.04; }
-    function getMagnetRadius() { return 60 + upgrades.magnet * 14; }
-    function getPlayerMaxStamina() { return Math.max(100, Math.floor(100 + player.r * 2)); }
-    function levelProgress() { const range = Math.max(1, nextLevel - levelStart); return clamp((player.r - levelStart) / range, 0, 1); }
-    function updateBotTargetCount() { targetBotCount = clamp(18 + Math.floor(level * 1.6) + Math.floor(killCount / 4), 18, 120); }
-    function addMoney(n) { money += n; saveMoney(); }
+    function upgradePrice(base, lvl) {
+      return Math.min(999999999, Math.floor(base * Math.pow(1.22, lvl)));
+    }
+    function getStarterSize() {
+      return 10 + upgrades.starterSize * 2;
+    }
+    function getSpeedBonus() {
+      return upgrades.speed * 0.04;
+    }
+    function getMagnetRadius() {
+      return 60 + upgrades.magnet * 14;
+    }
+    function getPlayerMaxStamina() {
+      return Math.max(100, Math.floor(100 + player.r * 2));
+    }
+    function levelProgress() {
+      const range = Math.max(1, nextLevel - levelStart);
+      return clamp((player.r - levelStart) / range, 0, 1);
+    }
+    function updateBotTargetCount() {
+      targetBotCount = clamp(18 + Math.floor(level * 1.2) + Math.floor(killCount / 5), 18, MAX_BOTS);
+    }
+    function addMoney(n) {
+      money += n;
+      saveMoney();
+    }
 
     function refreshUpgradeUI() {
       const items = [
@@ -334,10 +732,18 @@
       });
       upgradeNote.textContent = 'Starter size only applies when you retry.';
     }
+
     function buyUpgrade(key, base) {
-      if (upgrades[key] >= 999) { toast('Max level reached', 'blue', 1300); return; }
+      if (upgrades[key] >= 999) {
+        toast('Max level reached', 'blue', 1300);
+        return;
+      }
       const price = upgradePrice(base, upgrades[key]);
-      if (money < price) { playPositionalSound(errorSound, player.x, player.y, 1200); toast('Not enough money', 'bad', 1400); return; }
+      if (money < price) {
+        playPositionalSound(errorSound, player.x, player.y, 1200);
+        toast('Not enough money', 'bad', 1400);
+        return;
+      }
       money -= price;
       saveMoney();
       upgrades[key] += 1;
@@ -352,16 +758,75 @@
       playerPreview.style.backgroundColor = customIcons.player ? 'transparent' : '#fff';
       botPreview.style.backgroundColor = customIcons.bot ? 'transparent' : '#fff';
     }
-    function saveIcons() { saveJson(ICON_KEY, { player: customIcons.player, bot: customIcons.bot }); toast('Icons saved', 'good', 1400); }
-    function resetIcons() { customIcons = { ...DEFAULT_ICON_STATE }; playerIconImage = null; botIconImage = null; localStorage.removeItem(ICON_KEY); playerIconInput.value = ''; botIconInput.value = ''; syncIconPreviews(); toast('Icons reset', 'blue', 1400); }
 
-    function starterSizeValue() { return getStarterSize(); }
-    function setPlayerBaseForRun() { player.r = starterSizeValue(); player.maxStamina = getPlayerMaxStamina(); player.stamina = player.maxStamina; }
-    function resetPlayerState() { player.x = 0; player.y = 0; player.speed = 4; player.sprinting = false; player.shieldTime = 0; player.speedBoostTime = 0; player.speedBoostMult = 1; level = 1; levelStart = starterSizeValue(); nextLevel = Math.max(levelStart + 14, 24); killCount = 0; lootIntensity = 1; updateBotTargetCount(); setPlayerBaseForRun(); }
+    function saveIcons() {
+      saveJson(ICON_KEY, { player: customIcons.player, bot: customIcons.bot });
+      toast('Icons saved', 'good', 1400);
+    }
+
+    function resetIcons() {
+      customIcons = { ...DEFAULT_ICON_STATE };
+      playerIconImage = null;
+      botIconImage = null;
+      localStorage.removeItem(ICON_KEY);
+      playerIconInput.value = '';
+      botIconInput.value = '';
+      syncIconPreviews();
+      toast('Icons reset', 'blue', 1400);
+    }
+
+    function starterSizeValue() {
+      return getStarterSize();
+    }
+
+    function setPlayerBaseForRun() {
+      player.r = starterSizeValue();
+      player.maxStamina = getPlayerMaxStamina();
+      player.stamina = player.maxStamina;
+    }
+
+    function resetPlayerState() {
+      player.x = 0;
+      player.y = 0;
+      player.speed = 4;
+      player.sprinting = false;
+      player.shieldTime = 0;
+      player.speedBoostTime = 0;
+      player.speedBoostMult = 1;
+      level = 1;
+      levelStart = starterSizeValue();
+      nextLevel = Math.max(levelStart + 14, 24);
+      killCount = 0;
+      lootIntensity = 1;
+      updateBotTargetCount();
+      setPlayerBaseForRun();
+    }
+
     function chunkKey(cx, cy) { return `${cx},${cy}`; }
     function currentChunk() { return { cx: Math.floor(player.x / WORLD.chunkSize), cy: Math.floor(player.y / WORLD.chunkSize) }; }
     function clearWorld() { foods = []; bots = []; effects = []; espLines = []; chunkFoods = new Map(); }
-    function drawDotBurst(x, y, count, color, power = 1) { for (let i = 0; i < count; i++) effects.push({ x, y, vx: rand(-2.8, 2.8) * power, vy: rand(-2.8, 2.8) * power, r: rand(2, 5) * power, life: rand(18, 28), color, ring: false }); effects.push({ x, y, vx: 0, vy: 0, r: 2, life: 16, color, ring: true, maxR: 26 * power }); }
+
+    function drawDotBurst(x, y, count, color, power = 1) {
+      for (let i = 0; i < count; i++) {
+        effects.push({
+          x, y,
+          vx: rand(-2.8, 2.8) * power,
+          vy: rand(-2.8, 2.8) * power,
+          r: rand(2, 5) * power,
+          life: rand(18, 28),
+          color,
+          ring: false
+        });
+      }
+      effects.push({
+        x, y,
+        vx: 0, vy: 0, r: 2,
+        life: 16,
+        color,
+        ring: true,
+        maxR: 26 * power
+      });
+    }
 
     function beginLoading(text, done) {
       loadingText.textContent = text || 'Preparing the world.';
@@ -379,41 +844,112 @@
     function loadManifest() {
       return fetch(SHOP_MANIFEST_URL, { cache: 'no-store' })
         .then(r => r.ok ? r.json() : Promise.reject(new Error('manifest missing')))
-        .then(json => { shopManifest = json && Array.isArray(json.items) ? json : { items: [] }; manifestLoaded = true; })
-        .catch(() => { shopManifest = { items: [{ uid: 'demo_uid', price: 10, file: 'demo.txt' }, { uid: 'skin_pack', price: 25, file: 'skin.zip' }] }; manifestLoaded = true; });
+        .then(json => {
+          shopManifest = json && Array.isArray(json.items) ? json : { items: [] };
+          manifestLoaded = true;
+        })
+        .catch(() => {
+          shopManifest = {
+            items: [
+              { uid: 'demo_uid', price: 10, file: 'demo.txt' },
+              { uid: 'skin_pack', price: 25, file: 'skin.zip' }
+            ]
+          };
+          manifestLoaded = true;
+        });
     }
-    function findShopItem(uid) { const q = normalizeName(uid).toLowerCase(); if (!q) return null; return (shopManifest.items || []).find(item => normalizeName(item.uid).toLowerCase() === q) || null; }
+
+    function findShopItem(uid) {
+      const q = normalizeName(uid).toLowerCase();
+      if (!q) return null;
+      return (shopManifest.items || []).find(item => normalizeName(item.uid).toLowerCase() === q) || null;
+    }
+
     function updateShopPreview() {
       const uid = normalizeName(itemInput.value);
       const item = findShopItem(uid);
       selectedShopItem = item;
       selectedShopFileUrl = null;
-      if (!uid) { itemStatus.textContent = 'Enter a UID to check price and file.'; buyBtn.className = 'buyBad'; return; }
-      if (!item) { itemStatus.textContent = `Not found: ${uid}
-That UID is not listed in manifest.json.`; buyBtn.className = 'buyBad'; return; }
+
+      if (!uid) {
+        itemStatus.textContent = 'Enter a UID to check price and file.';
+        buyBtn.className = 'buyBad';
+        return;
+      }
+      if (!item) {
+        itemStatus.textContent = `Not found: ${uid}\nThat UID is not listed in manifest.json.`;
+        buyBtn.className = 'buyBad';
+        return;
+      }
+
       const price = Number(item.price || 0);
       const canBuy = money >= price;
       selectedShopFileUrl = `${SHOP_BASE_URL}${item.file || item.uid}`;
-      itemStatus.textContent = `Found: ${item.uid}
-File: ${item.file || item.uid}
-Price: ${price} money
-Status: ${canBuy ? 'Buyable' : 'Not enough money'}`;
+      itemStatus.textContent = `Found: ${item.uid}\nFile: ${item.file || item.uid}\nPrice: ${price} money\nStatus: ${canBuy ? 'Buyable' : 'Not enough money'}`;
       buyBtn.className = canBuy ? 'buyGood' : 'buyBad';
     }
-    function downloadFile(url, filename) { const a = document.createElement('a'); a.href = url; a.download = filename || ''; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
-    function buySelectedItem() { updateShopPreview(); const item = selectedShopItem; if (!item) { playPositionalSound(errorSound, player.x, player.y, 1200); toast('That UID is not in manifest.json.', 'bad'); return; } const price = Number(item.price || 0); if (money < price) { playPositionalSound(errorSound, player.x, player.y, 1200); toast('Not enough money.', 'bad'); return; } money -= price; saveMoney(); playPositionalSound(buySound, player.x, player.y, 1200); itemStatus.textContent = `Purchased: ${item.uid}
-Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item.file || item.uid}`, item.file || item.uid); toast(`Downloaded ${item.file || item.uid}`, 'good'); updateShopPreview(); }
+
+    function downloadFile(url, filename) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || '';
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function buySelectedItem() {
+      updateShopPreview();
+      const item = selectedShopItem;
+      if (!item) {
+        playPositionalSound(errorSound, player.x, player.y, 1200);
+        toast('That UID is not in manifest.json.', 'bad');
+        return;
+      }
+      const price = Number(item.price || 0);
+      if (money < price) {
+        playPositionalSound(errorSound, player.x, player.y, 1200);
+        toast('Not enough money.', 'bad');
+        return;
+      }
+      money -= price;
+      saveMoney();
+      playPositionalSound(buySound, player.x, player.y, 1200);
+      itemStatus.textContent = `Purchased: ${item.uid}\nDownloading now...`;
+      downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item.file || item.uid}`, item.file || item.uid);
+      toast(`Downloaded ${item.file || item.uid}`, 'good');
+      updateShopPreview();
+    }
 
     function spawnCrateNotice(x, y) {
       if (performance.now() < worldReadyAt) return;
       toast('Crate just spawned!', 'blue', 1600);
-      espLines.push({ x1: player.x, y1: player.y, x2: x, y2: y, life: 240, color: 'rgba(255,255,255,.9)' });
+      espLines.push({
+        x1: player.x,
+        y1: player.y,
+        x2: x,
+        y2: y,
+        life: 240,
+        color: 'rgba(255,255,255,.9)'
+      });
     }
-    function pickRandomPower() { const arr = [{ type: 'speed', name: 'Speed', duration: Math.floor(rand(60 * 60, 5 * 60 * 60)) }, { type: 'size', name: '+Size', amount: Math.floor(rand(1, 9999)) }, { type: 'fuel', name: 'Speed Fuel +99', amount: 99 }, { type: 'shield', name: 'Blue Shield', duration: 10 * 60 }, { type: 'explosion', name: 'Explosion', duration: Math.floor(rand(3 * 60, 8 * 60)) }]; return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function pickRandomPower() {
+      const arr = [
+        { type: 'speed', name: 'Speed', duration: Math.floor(rand(60 * 60, 5 * 60 * 60)) },
+        { type: 'size', name: '+Size', amount: Math.floor(rand(1, 9999)) },
+        { type: 'fuel', name: 'Speed Fuel +99', amount: 99 },
+        { type: 'shield', name: 'Blue Shield', duration: 10 * 60 },
+        { type: 'explosion', name: 'Explosion', duration: Math.floor(rand(3 * 60, 8 * 60)) }
+      ];
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
 
     function generateChunk(cx, cy) {
       const key = chunkKey(cx, cy);
       if (chunkFoods.has(key)) return;
+
       const arr = [];
       const far = Math.hypot(cx, cy);
       const foodCount = clamp(Math.floor(18 + far * 1.15 + rand(0, 12)), 18, 140);
@@ -421,13 +957,27 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       const bigChance = clamp(0.08 + far * 0.003, 0.08, 0.36);
       const crateChance = clamp(0.06 + lootIntensity * 0.004, 0.06, 0.18);
       const gemChance = clamp(0.18 + lootIntensity * 0.007, 0.18, 0.42);
+
       for (let i = 0; i < foodCount; i++) {
         const isBig = Math.random() < bigChance;
         const r = isBig ? rand(8, 18) * sizeBoost : rand(2, 5) * sizeBoost;
-        const food = { x: cx * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20), y: cy * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20), r, vx: rand(-0.35, 0.35), vy: rand(-0.35, 0.35), chunkX: cx, chunkY: cy, chunkKey: key, big: isBig, color: sizeColor(r), kind: 'food' };
+        const food = {
+          x: cx * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20),
+          y: cy * WORLD.chunkSize + rand(20, WORLD.chunkSize - 20),
+          r,
+          vx: rand(-0.35, 0.35),
+          vy: rand(-0.35, 0.35),
+          chunkX: cx,
+          chunkY: cy,
+          chunkKey: key,
+          big: isBig,
+          color: sizeColor(r),
+          kind: 'food'
+        };
         arr.push(food);
         foods.push(food);
       }
+
       if (Math.random() < crateChance) {
         const centerX = cx * WORLD.chunkSize + WORLD.chunkSize / 2;
         const centerY = cy * WORLD.chunkSize + WORLD.chunkSize / 2;
@@ -446,11 +996,31 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
         foods.push(crate);
         spawnCrateNotice(crate.x, crate.y);
       }
+
       const gemCount = Math.random() < gemChance ? 1 + (Math.random() < 0.5 ? 1 : 0) : 0;
-      for (let g = 0; g < gemCount; g++) { const gem = { x: cx * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35), y: cy * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35), r: 9, chunkX: cx, chunkY: cy, chunkKey: key, kind: 'gem' }; arr.push(gem); foods.push(gem); }
+      for (let g = 0; g < gemCount; g++) {
+        const gem = {
+          x: cx * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35),
+          y: cy * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35),
+          r: 9,
+          chunkX: cx,
+          chunkY: cy,
+          chunkKey: key,
+          kind: 'gem'
+        };
+        arr.push(gem);
+        foods.push(gem);
+      }
+
       chunkFoods.set(key, arr);
     }
-    function unloadChunk(key) { if (!chunkFoods.has(key)) return; foods = foods.filter(f => f.chunkKey !== key); chunkFoods.delete(key); }
+
+    function unloadChunk(key) {
+      if (!chunkFoods.has(key)) return;
+      foods = foods.filter(f => f.chunkKey !== key);
+      chunkFoods.delete(key);
+    }
+
     function updateChunks() {
       const { cx, cy } = currentChunk();
       for (let x = cx - WORLD.loadRadius; x <= cx + WORLD.loadRadius; x++) {
@@ -466,49 +1036,121 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
     }
 
     function spawnBot(forcePos = null, forceSize = null) {
+      if (bots.length >= MAX_BOTS + 10) return;
+
       const angle = rand(0, Math.PI * 2);
       const radius = rand(520, 1700);
       const personality = ['aggressive', 'coward', 'scavenger', 'wanderer', 'chaotic'][Math.floor(Math.random() * 5)];
       const isBig = Math.random() < clamp(0.08 + level * 0.004 + killCount * 0.001, 0.08, 0.35);
       const sizeScale = 1 + level * 0.025 + killCount * 0.0015;
+
       let r = forceSize != null ? forceSize : (isBig ? player.r * rand(1.05, 1.35) * sizeScale : rand(2, 45));
       r = clamp(r, 1, Math.max(400, player.r * 3.2));
+
       const pos = forcePos || { x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius };
-      bots.push({ x: pos.x, y: pos.y, r, vx: 0, vy: 0, scale: 1, alpha: 1, dying: false, personality, name: BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)], moodTime: Math.floor(rand(30, 110)), mood: 'wander', target: null, wanderX: player.x + rand(-1000, 1000), wanderY: player.y + rand(-1000, 1000), baseSpeed: rand(0.55, 1.25), speedJitter: rand(0.85, 1.15), sizeFactor: clamp(18 / (r + 6), 0.14, 1.0) });
+
+      bots.push({
+        x: pos.x,
+        y: pos.y,
+        r,
+        vx: 0,
+        vy: 0,
+        scale: 1,
+        alpha: 1,
+        dying: false,
+        personality,
+        name: BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)],
+        moodTime: Math.floor(rand(30, 110)),
+        mood: 'wander',
+        target: null,
+        wanderX: player.x + rand(-1000, 1000),
+        wanderY: player.y + rand(-1000, 1000),
+        baseSpeed: rand(0.55, 1.25),
+        speedJitter: rand(0.85, 1.15),
+        sizeFactor: clamp(18 / (r + 6), 0.14, 1.0)
+      });
     }
-    function maintainBots() { while (bots.length < targetBotCount) spawnBot(); }
+
+    function maintainBots() {
+      while (bots.length < targetBotCount) spawnBot();
+    }
+
     function spawnRaidWave() {
-      const count = Math.floor(rand(25, 81));
+      const count = Math.floor(rand(12, 27));
       toast('Wave raid incoming!', 'bad', 1800);
-      for (let i = 0; i < count; i++) spawnBot({ x: player.x + rand(-3000, 3000), y: player.y + rand(-3000, 3000) }, rand(1, 400));
+      for (let i = 0; i < count; i++) {
+        if (bots.length >= MAX_BOTS + 10) break;
+        spawnBot(
+          { x: player.x + rand(-2200, 2200), y: player.y + rand(-2200, 2200) },
+          rand(1, 240)
+        );
+      }
     }
 
     function chooseBotAction(bot) {
       bot.moodTime--;
       if (bot.moodTime > 0 && bot.target) return;
       bot.moodTime = Math.floor(rand(30, 110));
+
       let nearestBigThreat = null, nearestSmallPreyBot = null, nearestFood = null;
       let bigThreatD = Infinity, smallPreyD = Infinity, foodD = Infinity;
       const playerD = dist(bot.x, bot.y, player.x, player.y);
       const playerBigger = player.r > bot.r * 1.08;
       const playerSmaller = bot.r > player.r * 1.08;
+
       for (const other of bots) {
         if (other === bot || other.dying) continue;
         const d = dist(bot.x, bot.y, other.x, other.y);
-        if (other.r > bot.r * 1.12 && d < bigThreatD) { bigThreatD = d; nearestBigThreat = other; }
-        if (other.r < bot.r * 0.9 && d < smallPreyD) { smallPreyD = d; nearestSmallPreyBot = other; }
+        if (other.r > bot.r * 1.12 && d < bigThreatD) {
+          bigThreatD = d;
+          nearestBigThreat = other;
+        }
+        if (other.r < bot.r * 0.9 && d < smallPreyD) {
+          smallPreyD = d;
+          nearestSmallPreyBot = other;
+        }
       }
-      for (const f of foods) { if (f.kind !== 'food') continue; const d = dist(bot.x, bot.y, f.x, f.y); if (d < foodD) { foodD = d; nearestFood = f; } }
+
+      for (const f of foods) {
+        if (f.kind !== 'food') continue;
+        const d = dist(bot.x, bot.y, f.x, f.y);
+        if (d < foodD) {
+          foodD = d;
+          nearestFood = f;
+        }
+      }
+
       const goAggro = bot.personality === 'aggressive' || bot.personality === 'chaotic';
       const goSafe = bot.personality === 'coward' || bot.personality === 'wanderer';
       const goFood = bot.personality === 'scavenger' || bot.personality === 'wanderer' || bot.personality === 'chaotic';
-      if (nearestBigThreat && bigThreatD < 360) { bot.mood = 'flee-bot'; bot.target = nearestBigThreat; return; }
-      if (playerD < 420) {
-        if (playerBigger && (goSafe || Math.random() < 0.8)) { bot.mood = 'flee-player'; bot.target = player; return; }
-        if (playerSmaller && goAggro && Math.random() < 0.6) { bot.mood = 'hunt-player'; bot.target = player; return; }
+
+      if (nearestBigThreat && bigThreatD < 360) {
+        bot.mood = 'flee-bot';
+        bot.target = nearestBigThreat;
+        return;
       }
-      if (nearestSmallPreyBot && goAggro && Math.random() < 0.64) { bot.mood = 'hunt-bot'; bot.target = nearestSmallPreyBot; return; }
-      if (nearestFood && goFood) { bot.mood = 'eat-food'; bot.target = nearestFood; return; }
+      if (playerD < 420) {
+        if (playerBigger && (goSafe || Math.random() < 0.8)) {
+          bot.mood = 'flee-player';
+          bot.target = player;
+          return;
+        }
+        if (playerSmaller && goAggro && Math.random() < 0.6) {
+          bot.mood = 'hunt-player';
+          bot.target = player;
+          return;
+        }
+      }
+      if (nearestSmallPreyBot && goAggro && Math.random() < 0.64) {
+        bot.mood = 'hunt-bot';
+        bot.target = nearestSmallPreyBot;
+        return;
+      }
+      if (nearestFood && goFood) {
+        bot.mood = 'eat-food';
+        bot.target = nearestFood;
+        return;
+      }
       bot.mood = 'wander';
       bot.target = { x: bot.wanderX + rand(-220, 220), y: bot.wanderY + rand(-220, 220) };
     }
@@ -519,29 +1161,55 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       const boost = player.speedBoostTime > 0 ? player.speedBoostMult : 1;
       return base * sprintMult * boost;
     }
+
     function movePlayer() {
       const speed = getPlayerSpeed();
       player.speed = speed;
+
       if (player.sprinting && player.stamina > 0) {
         const drain = clamp(0.95 + player.r * 0.015, 0.9, 2.0);
         player.stamina = Math.max(0, player.stamina - drain);
-        if (player.stamina <= 0) { player.sprinting = false; sprintBtn.classList.remove('on'); toast('Stamina empty', 'bad', 1200); }
+        if (player.stamina <= 0) {
+          player.sprinting = false;
+          sprintBtn.classList.remove('on');
+          toast('Stamina empty', 'bad', 1200);
+        }
       }
+
       if (keys['w']) player.y -= speed;
       if (keys['s']) player.y += speed;
       if (keys['a']) player.x -= speed;
       if (keys['d']) player.x += speed;
-      if (joy.active) { player.x += joy.x * speed * 2; player.y += joy.y * speed * 2; }
+      if (joy.active) {
+        player.x += joy.x * speed * 2;
+        player.y += joy.y * speed * 2;
+      }
     }
 
     function applyPowerLoot(power, x, y) {
       if (!power) return;
-      if (power.type === 'speed') { player.speedBoostTime = power.duration; player.speedBoostMult = 1.25; toast('PowerLoot: Speed', 'blue'); }
-      else if (power.type === 'size') { player.r += power.amount; player.maxStamina = getPlayerMaxStamina(); player.stamina = Math.min(player.maxStamina, player.stamina); toast(`PowerLoot: +${power.amount} size`, 'good'); }
-      else if (power.type === 'fuel') { player.maxStamina = Math.min(999999, player.maxStamina + power.amount); player.stamina = Math.min(player.maxStamina, player.stamina + power.amount); toast('PowerLoot: Speed Fuel +99', 'blue'); }
-      else if (power.type === 'shield') { player.shieldTime = Math.max(player.shieldTime, power.duration); toast('PowerLoot: Blue Shield', 'blue'); }
-      else if (power.type === 'explosion') { effects.push({ x, y, vx: 0, vy: 0, r: 7, life: power.duration, color: '#ffffff', ring: false, explode: true }); toast('PowerLoot: Explosion droplet', 'bad'); }
+      if (power.type === 'speed') {
+        player.speedBoostTime = power.duration;
+        player.speedBoostMult = 1.25;
+        toast('PowerLoot: Speed', 'blue');
+      } else if (power.type === 'size') {
+        player.r += power.amount;
+        player.maxStamina = getPlayerMaxStamina();
+        player.stamina = Math.min(player.maxStamina, player.stamina);
+        toast(`PowerLoot: +${power.amount} size`, 'good');
+      } else if (power.type === 'fuel') {
+        player.maxStamina = Math.min(999999, player.maxStamina + power.amount);
+        player.stamina = Math.min(player.maxStamina, player.stamina + power.amount);
+        toast('PowerLoot: Speed Fuel +99', 'blue');
+      } else if (power.type === 'shield') {
+        player.shieldTime = Math.max(player.shieldTime, power.duration);
+        toast('PowerLoot: Blue Shield', 'blue');
+      } else if (power.type === 'explosion') {
+        effects.push({ x, y, vx: 0, vy: 0, r: 7, life: power.duration, color: '#ffffff', ring: false, explode: true });
+        toast('PowerLoot: Explosion droplet', 'bad');
+      }
     }
+
     function collectLoot(item) {
       if (item.kind === 'crate') applyPowerLoot(item.power, item.x, item.y);
       if (item.kind === 'gem') {
@@ -560,8 +1228,13 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       const magnetRadius = getMagnetRadius();
       for (let i = foods.length - 1; i >= 0; i--) {
         const f = foods[i];
+
         if (f.kind === 'food') {
-          f.x += f.vx; f.y += f.vy; f.vx *= 0.995; f.vy *= 0.995;
+          f.x += f.vx;
+          f.y += f.vy;
+          f.vx *= 0.995;
+          f.vy *= 0.995;
+
           const minX = f.chunkX * WORLD.chunkSize + 10, maxX = (f.chunkX + 1) * WORLD.chunkSize - 10;
           const minY = f.chunkY * WORLD.chunkSize + 10, maxY = (f.chunkY + 1) * WORLD.chunkSize - 10;
           if (f.x <= minX + f.r) { f.x = minX + f.r; f.vx *= -1; }
@@ -569,6 +1242,7 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
           if (f.y <= minY + f.r) { f.y = minY + f.r; f.vy *= -1; }
           if (f.y >= maxY - f.r) { f.y = maxY - f.r; f.vy *= -1; }
         }
+
         if (f.kind === 'crate' && !f.nearAnnounced) {
           const crateDist = dist(player.x, player.y, f.x, f.y);
           if (crateDist < 900) {
@@ -576,6 +1250,7 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
             toast(`Crate nearby: ${Math.floor(crateDist)}px`, 'blue', 1800);
           }
         }
+
         if (f.kind === 'gem') {
           const dMag = dist(player.x, player.y, f.x, f.y);
           if (dMag < magnetRadius) {
@@ -585,8 +1260,10 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
             f.y += (dy / d) * pull * 5;
           }
         }
+
         const d = dist(player.x, player.y, f.x, f.y);
         if (d >= player.r + f.r * 0.85) continue;
+
         if (f.kind === 'food') {
           player.r += f.big ? f.r * 0.08 : f.r * 0.03;
           player.maxStamina = getPlayerMaxStamina();
@@ -604,12 +1281,40 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       }
     }
 
-    function steerToward(bot, tx, ty, power) { const dx = tx - bot.x, dy = ty - bot.y, d = Math.hypot(dx, dy) + 0.001; bot.vx += (dx / d) * power; bot.vy += (dy / d) * power; }
-    function steerAway(bot, tx, ty, power) { const dx = bot.x - tx, dy = bot.y - ty, d = Math.hypot(dx, dy) + 0.001; bot.vx += (dx / d) * power; bot.vy += (dy / d) * power; }
-    function botEatFoods(bot) { for (let i = foods.length - 1; i >= 0; i--) { const f = foods[i]; if (f.kind !== 'food') continue; const d = dist(bot.x, bot.y, f.x, f.y); if (d < bot.r + f.r * 0.78) { bot.r += f.big ? f.r * 0.06 : f.r * 0.03; drawDotBurst(f.x, f.y, f.big ? 8 : 5, f.color, f.big ? 1 : 0.8); playPositionalSound(eatSound, f.x, f.y, 1200); foods.splice(i, 1); return true; } } return false; }
+    function steerToward(bot, tx, ty, power) {
+      const dx = tx - bot.x, dy = ty - bot.y, d = Math.hypot(dx, dy) + 0.001;
+      bot.vx += (dx / d) * power;
+      bot.vy += (dy / d) * power;
+    }
+    function steerAway(bot, tx, ty, power) {
+      const dx = bot.x - tx, dy = bot.y - ty, d = Math.hypot(dx, dy) + 0.001;
+      bot.vx += (dx / d) * power;
+      bot.vy += (dy / d) * power;
+    }
+
+    function botEatFoods(bot) {
+      for (let i = foods.length - 1; i >= 0; i--) {
+        const f = foods[i];
+        if (f.kind !== 'food') continue;
+        const d = dist(bot.x, bot.y, f.x, f.y);
+        if (d < bot.r + f.r * 0.78) {
+          bot.r += f.big ? f.r * 0.06 : f.r * 0.03;
+          drawDotBurst(f.x, f.y, f.big ? 8 : 5, f.color, f.big ? 1 : 0.8);
+          playPositionalSound(eatSound, f.x, f.y, 1200);
+          foods.splice(i, 1);
+          return true;
+        }
+      }
+      return false;
+    }
+
     function updateBots() {
       for (const bot of bots) {
-        if (bot.dying) { bot.scale *= 0.88; bot.alpha *= 0.92; continue; }
+        if (bot.dying) {
+          bot.scale *= 0.88;
+          bot.alpha *= 0.92;
+          continue;
+        }
         chooseBotAction(bot);
         const botSpeed = clamp((1.55 * bot.baseSpeed * bot.speedJitter * bot.sizeFactor) / Math.sqrt(bot.r / 10), 0.16, 1.45);
         if (bot.mood === 'flee-player') steerAway(bot, player.x, player.y, 0.12 * botSpeed);
@@ -618,20 +1323,36 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
         else if (bot.mood === 'hunt-bot' && bot.target) steerToward(bot, bot.target.x, bot.target.y, 0.09 * botSpeed);
         else if (bot.mood === 'eat-food' && bot.target) steerToward(bot, bot.target.x, bot.target.y, 0.08 * botSpeed);
         else if (bot.target) steerToward(bot, bot.target.x, bot.target.y, 0.05 * botSpeed);
-        bot.vx *= 0.90; bot.vy *= 0.90; bot.x += bot.vx; bot.y += bot.vy;
+        bot.vx *= 0.90;
+        bot.vy *= 0.90;
+        bot.x += bot.vx;
+        bot.y += bot.vy;
         botEatFoods(bot);
       }
     }
 
     function resolveBotVsBot() {
       for (let i = 0; i < bots.length; i++) {
-        const a = bots[i]; if (a.dying) continue;
+        const a = bots[i];
+        if (a.dying) continue;
+
         for (let j = i + 1; j < bots.length; j++) {
-          const b = bots[j]; if (b.dying) continue;
-          const d = dist(a.x, a.y, b.x, b.y), minD = a.r + b.r;
+          const b = bots[j];
+          if (b.dying) continue;
+
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          const maxD = a.r + b.r + 50;
+
+          if (Math.abs(dx) > maxD || Math.abs(dy) > maxD) continue;
+
+          const d = Math.hypot(dx, dy);
+          const minD = a.r + b.r;
+
           if (d < minD * 0.98) {
             const larger = a.r >= b.r ? a : b;
             const smaller = a.r >= b.r ? b : a;
+
             if (larger.r > smaller.r * 1.01) {
               smaller.dying = true;
               larger.r += smaller.r * 0.06;
@@ -641,8 +1362,13 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
               updateBotTargetCount();
               toast(`Kill Stats +1 | Total ${killCount}`, 'good', 1100);
             } else {
-              const push = (minD - d) * 0.02, dx = (a.x - b.x) / (d + 0.001), dy = (a.y - b.y) / (d + 0.001);
-              a.vx += dx * push; a.vy += dy * push; b.vx -= dx * push; b.vy -= dy * push;
+              const push = (minD - d) * 0.02;
+              const nx = dx / (d + 0.001);
+              const ny = dy / (d + 0.001);
+              a.vx += nx * push;
+              a.vy += ny * push;
+              b.vx -= nx * push;
+              b.vy -= ny * push;
             }
           }
         }
@@ -652,13 +1378,16 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
     function resolvePlayerCollisions() {
       if (playerShield > 0) playerShield--;
       if (player.shieldTime > 0) player.shieldTime--;
-      if (player.speedBoostTime > 0) player.speedBoostTime--; else player.speedBoostMult = 1;
+      if (player.speedBoostTime > 0) player.speedBoostTime--;
+      else player.speedBoostMult = 1;
+
       for (let i = bots.length - 1; i >= 0; i--) {
         const bot = bots[i];
         if (bot.dying) continue;
         const d = dist(player.x, player.y, bot.x, bot.y);
         if (d >= player.r + bot.r * 0.82) continue;
         if (playerShield > 0 || player.shieldTime > 0) continue;
+
         if (player.r > bot.r) {
           bot.dying = true;
           player.r += bot.r * 0.08;
@@ -681,51 +1410,256 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
     }
 
     function updateEntities() {
-      for (let i = bots.length - 1; i >= 0; i--) if (bots[i].dying && (bots[i].scale < 0.05 || bots[i].alpha < 0.05)) bots.splice(i, 1);
+      for (let i = bots.length - 1; i >= 0; i--) {
+        if (bots[i].dying && (bots[i].scale < 0.05 || bots[i].alpha < 0.05)) bots.splice(i, 1);
+      }
+
       while (bots.length < targetBotCount) spawnBot();
-      for (const e of effects) { e.x += e.vx; e.y += e.vy; e.vx *= 0.96; e.vy *= 0.96; e.life -= 1; }
+
+      for (const e of effects) {
+        e.x += e.vx;
+        e.y += e.vy;
+        e.vx *= 0.96;
+        e.vy *= 0.96;
+        e.life -= 1;
+      }
+
       for (const l of espLines) l.life -= 1;
       espLines = espLines.filter(l => l.life > 0);
       effects = effects.filter(e => e.life > 0);
+
+      if (effects.length > MAX_EFFECTS) {
+        effects.splice(0, effects.length - MAX_EFFECTS);
+      }
     }
 
-    function updateLevelSystem() { while (player.r >= nextLevel) { level++; levelStart = nextLevel; nextLevel = Math.max(computeNextLevelThreshold(nextLevel), player.r + 10); updateBotTargetCount(); } }
-    function updateWorld() { movePlayer(); updateChunks(); updateFoods(); updateBots(); resolveBotVsBot(); resolvePlayerCollisions(); updateEntities(); updateLevelSystem(); }
+    function updateLevelSystem() {
+      while (player.r >= nextLevel) {
+        level++;
+        levelStart = nextLevel;
+        nextLevel = Math.max(computeNextLevelThreshold(nextLevel), player.r + 10);
+        updateBotTargetCount();
+      }
+    }
+
+    function updateWorld() {
+      movePlayer();
+      updateChunks();
+      updateFoods();
+      updateBots();
+      resolveBotVsBot();
+      resolvePlayerCollisions();
+      updateEntities();
+      updateLevelSystem();
+    }
 
     function drawGrid() {
       const step = 120;
-      const left = cam.x - canvas.width / (2 * cam.zoom), right = cam.x + canvas.width / (2 * cam.zoom), top = cam.y - canvas.height / (2 * cam.zoom), bottom = cam.y + canvas.height / (2 * cam.zoom);
-      const startX = Math.floor(left / step) * step, endX = Math.ceil(right / step) * step, startY = Math.floor(top / step) * step, endY = Math.ceil(bottom / step) * step;
-      ctx.strokeStyle = 'rgba(255,255,255,0.045)'; ctx.lineWidth = 1;
-      for (let x = startX; x <= endX; x += step) { ctx.beginPath(); ctx.moveTo(x, top - step * 2); ctx.lineTo(x, bottom + step * 2); ctx.stroke(); }
-      for (let y = startY; y <= endY; y += step) { ctx.beginPath(); ctx.moveTo(left - step * 2, y); ctx.lineTo(right + step * 2, y); ctx.stroke(); }
-    }
-    function drawCircle(x, y, r, color, img) {
-      if (img && img.complete && img.naturalWidth > 0) { ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip(); ctx.drawImage(img, x - r, y - r, r * 2, r * 2); ctx.restore(); }
-      else { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); }
-    }
-    function drawFoods() {
-      for (const f of foods) {
-        if (f.kind === 'crate') { drawCircle(f.x, f.y, f.r, '#c9a37b', crateImg); ctx.save(); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(f.power?.name?.slice(0, 1) || 'C', f.x, f.y + 0.5); ctx.restore(); continue; }
-        if (f.kind === 'gem') { drawCircle(f.x, f.y, f.r, '#70dcff', gemImg); continue; }
-        ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fillStyle = f.color; ctx.fill();
+      const left = cam.x - canvas.width / (2 * cam.zoom);
+      const right = cam.x + canvas.width / (2 * cam.zoom);
+      const top = cam.y - canvas.height / (2 * cam.zoom);
+      const bottom = cam.y + canvas.height / (2 * cam.zoom);
+      const startX = Math.floor(left / step) * step;
+      const endX = Math.ceil(right / step) * step;
+      const startY = Math.floor(top / step) * step;
+      const endY = Math.ceil(bottom / step) * step;
+      ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+      ctx.lineWidth = 1;
+      for (let x = startX; x <= endX; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, top - step * 2);
+        ctx.lineTo(x, bottom + step * 2);
+        ctx.stroke();
+      }
+      for (let y = startY; y <= endY; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(left - step * 2, y);
+        ctx.lineTo(right + step * 2, y);
+        ctx.stroke();
       }
     }
-    function drawBots() { for (const bot of bots) { ctx.save(); ctx.globalAlpha = bot.alpha; const c = bot.r > player.r ? '#ff5e5e' : '#58ff72'; drawCircle(bot.x, bot.y, bot.r * bot.scale, c, botIconImage);
+
+    function drawCircle(x, y, r, color, img) {
+      if (img && img.complete && img.naturalWidth > 0) {
         ctx.save();
-        ctx.fillStyle = bot.r > player.r ? 'rgba(255,80,80,.95)' : 'rgba(84,255,112,.95)';
-        ctx.font = `${Math.max(9, Math.min(18, bot.r * 0.12))}px system-ui`;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(img, x - r, y - r, r * 2, r * 2);
+        ctx.restore();
+      } else {
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      }
+    }
+
+    function drawFoods() {
+      for (const f of foods) {
+        if (f.kind === 'crate') {
+          drawCircle(f.x, f.y, f.r, '#c9a37b', crateImg);
+          ctx.save();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 11px system-ui';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(f.power?.name?.slice(0, 1) || 'C', f.x, f.y + 0.5);
+          ctx.restore();
+          continue;
+        }
+        if (f.kind === 'gem') {
+          drawCircle(f.x, f.y, f.r, '#70dcff', gemImg);
+          continue;
+        }
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fillStyle = f.color;
+        ctx.fill();
+      }
+    }
+
+    function drawBots() {
+      for (const bot of bots) {
+        ctx.save();
+        ctx.globalAlpha = bot.alpha;
+
+        const c = bot.r > player.r ? '#ff5e5e' : '#58ff72';
+        drawCircle(bot.x, bot.y, bot.r * bot.scale, c, botIconImage);
+
+        const label = bot.name || 'BOT';
+        const fontSize = Math.max(10, Math.min(18, bot.r * 0.12));
+        ctx.font = `${fontSize}px system-ui`;
+        const textW = ctx.measureText(label).width;
+        const boxW = textW + 12;
+        const boxH = fontSize + 8;
+        const boxX = bot.x - boxW / 2;
+        const boxY = bot.y - bot.r * 0.95 - boxH;
+
+        ctx.fillStyle = 'rgba(0,0,0,.38)';
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+
+        ctx.strokeStyle = 'rgba(255,255,255,.14)';
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const label = bot.name || 'BOT';
-        ctx.fillText(label, bot.x, bot.y);
-        ctx.restore(); ctx.restore(); ctx.save(); ctx.fillStyle = c; ctx.font = `${Math.max(10, Math.min(18, bot.r * 0.18))}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.floor(bot.r), bot.x, bot.y - bot.r * 0.55); ctx.restore(); if (debugEnabled) { ctx.save(); ctx.strokeStyle = c; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(bot.x, bot.y); ctx.stroke(); ctx.restore(); } } }
-    function drawPlayer() { drawCircle(player.x, player.y, player.r, player.shieldTime > 0 ? '#a7e7ff' : '#ffffff', playerIconImage); if (player.shieldTime > 0) { ctx.save(); ctx.strokeStyle = 'rgba(98,185,255,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, player.r + 12, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); } ctx.fillStyle = '#ffffff'; ctx.font = `${Math.max(12, Math.min(28, player.r * 0.34))}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.floor(player.r), player.x, player.y - player.r - 16); }
-    function drawEffects() { for (const e of effects) { if (e.ring) { ctx.save(); ctx.globalAlpha = clamp(e.life / 16, 0, 1); ctx.beginPath(); ctx.arc(e.x, e.y, e.maxR * (1 - e.life / 16), 0, Math.PI * 2); ctx.strokeStyle = e.color; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); } else if (e.explode) { ctx.save(); ctx.globalAlpha = clamp(e.life / 8, 0, 1); ctx.beginPath(); ctx.arc(e.x, e.y, e.r + (8 - e.life) * 0.3, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.restore(); ctx.save(); ctx.fillStyle = '#000'; ctx.font = 'bold 14px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.max(0, Math.ceil(e.life / 60)), e.x, e.y); ctx.restore(); } else { ctx.save(); ctx.globalAlpha = clamp(e.life / 28, 0, 1); ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fillStyle = e.color; ctx.fill(); ctx.restore(); } } for (const l of espLines) { ctx.save(); ctx.globalAlpha = clamp(l.life / 240, 0, 1); ctx.strokeStyle = l.color; ctx.setLineDash([10, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); ctx.restore(); } }
-    function drawWorld() { ctx.clearRect(0, 0, canvas.width, canvas.height); cam.x += (player.x - cam.x) * 0.08; cam.y += (player.y - cam.y) * 0.08; const targetZoom = clamp(1.35 - Math.log10(player.r + 1) * 0.22, 0.04, 1.35); cam.zoom += (targetZoom - cam.zoom) * 0.08; ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(cam.zoom, cam.zoom); ctx.translate(-cam.x, -cam.y); drawGrid(); drawFoods(); drawBots(); drawEffects(); drawPlayer(); ctx.restore(); }
+        ctx.fillText(label, bot.x, boxY + boxH / 2 + 0.5);
+
+        ctx.fillStyle = c;
+        ctx.font = `${Math.max(10, Math.min(18, bot.r * 0.18))}px system-ui`;
+        ctx.fillText(Math.floor(bot.r), bot.x, bot.y - bot.r * 0.55);
+
+        if (debugEnabled) {
+          ctx.save();
+          ctx.strokeStyle = c;
+          ctx.globalAlpha = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(player.x, player.y);
+          ctx.lineTo(bot.x, bot.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function drawPlayer() {
+      drawCircle(player.x, player.y, player.r, player.shieldTime > 0 ? '#a7e7ff' : '#ffffff', playerIconImage);
+      if (player.shieldTime > 0) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(98,185,255,.9)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r + 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.max(12, Math.min(28, player.r * 0.34))}px system-ui`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(Math.floor(player.r), player.x, player.y - player.r - 16);
+    }
+
+    function drawEffects() {
+      for (const e of effects) {
+        if (e.ring) {
+          ctx.save();
+          ctx.globalAlpha = clamp(e.life / 16, 0, 1);
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.maxR * (1 - e.life / 16), 0, Math.PI * 2);
+          ctx.strokeStyle = e.color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.restore();
+        } else if (e.explode) {
+          ctx.save();
+          ctx.globalAlpha = clamp(e.life / 8, 0, 1);
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r + (8 - e.life) * 0.3, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.restore();
+          ctx.save();
+          ctx.fillStyle = '#000';
+          ctx.font = 'bold 14px system-ui';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(Math.max(0, Math.ceil(e.life / 60)), e.x, e.y);
+          ctx.restore();
+        } else {
+          ctx.save();
+          ctx.globalAlpha = clamp(e.life / 28, 0, 1);
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+          ctx.fillStyle = e.color;
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      for (const l of espLines) {
+        ctx.save();
+        ctx.globalAlpha = clamp(l.life / 240, 0, 1);
+        ctx.strokeStyle = l.color;
+        ctx.setLineDash([10, 8]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(l.x1, l.y1);
+        ctx.lineTo(l.x2, l.y2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawWorld() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      cam.x += (player.x - cam.x) * 0.08;
+      cam.y += (player.y - cam.y) * 0.08;
+      const targetZoom = clamp(1.35 - Math.log10(player.r + 1) * 0.22, 0.04, 1.35);
+      cam.zoom += (targetZoom - cam.zoom) * 0.08;
+
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.scale(cam.zoom, cam.zoom);
+      ctx.translate(-cam.x, -cam.y);
+      drawGrid();
+      drawFoods();
+      drawBots();
+      drawEffects();
+      drawPlayer();
+      ctx.restore();
+    }
 
     function updateDebug() {
-      if (!debugEnabled) { debugPanel.style.display = 'none'; return; }
+      if (!debugEnabled) {
+        debugPanel.style.display = 'none';
+        return;
+      }
       debugPanel.style.display = 'block';
       const lines = [
         `State: ${gameState}`,
@@ -743,6 +1677,7 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       bots.slice(0, 12).forEach((b, i) => lines.push(`#${i + 1} size=${Math.floor(b.r)} mood=${b.mood}${b.dying ? ' dying' : ''}`));
       debugInfo.innerHTML = lines.map(t => `<div class="line">${t}</div>`).join('');
     }
+
     function updateHUD() {
       uiLevel.textContent = level;
       uiSize.textContent = Math.floor(player.r);
@@ -755,9 +1690,16 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       uiStaminaFill.style.width = `${clamp(player.stamina / Math.max(1, player.maxStamina), 0, 1) * 100}%`;
       sprintBtn.textContent = player.sprinting ? 'Fuel ON' : 'Fuel';
       sprintBtn.classList.toggle('on', player.sprinting);
-      refreshUpgradeUI();
     }
-    function updateFPS(now) { frameCounter++; if (now - lastFpsTick >= 1000) { fps = frameCounter; frameCounter = 0; lastFpsTick = now; } }
+
+    function updateFPS(now) {
+      frameCounter++;
+      if (now - lastFpsTick >= 1000) {
+        fps = frameCounter;
+        frameCounter = 0;
+        lastFpsTick = now;
+      }
+    }
 
     function beginRun() {
       clearWorld();
@@ -768,16 +1710,27 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       syncIconPreviews();
       worldReadyAt = performance.now() + 5000;
     }
-    function retryGame() { beginLoading('Resetting the world.', () => { beginRun(); saveMoney(); }); }
-    function openRedeem() { redeemOverlay.style.display = 'flex'; updateShopPreview(); }
-    function closeRedeem() { redeemOverlay.style.display = 'none'; }
-    function toggleSprint(force) { player.sprinting = typeof force === 'boolean' ? force : !player.sprinting; sprintBtn.classList.toggle('on', player.sprinting); }
-    function toggleMenu() { uiBody.classList.toggle('collapsed'); }
 
-    function spawnRaidWave() {
-      const count = Math.floor(rand(25, 81));
-      toast('Wave raid incoming!', 'bad', 1800);
-      for (let i = 0; i < count; i++) spawnBot({ x: player.x + rand(-3000, 3000), y: player.y + rand(-3000, 3000) }, rand(1, 400));
+    function retryGame() {
+      beginLoading('Resetting the world.', () => {
+        beginRun();
+        saveMoney();
+      });
+    }
+
+    function openRedeem() {
+      redeemOverlay.style.display = 'flex';
+      updateShopPreview();
+    }
+    function closeRedeem() {
+      redeemOverlay.style.display = 'none';
+    }
+    function toggleSprint(force) {
+      player.sprinting = typeof force === 'boolean' ? force : !player.sprinting;
+      sprintBtn.classList.toggle('on', player.sprinting);
+    }
+    function toggleMenu() {
+      uiBody.classList.toggle('collapsed');
     }
 
     function updateWaveTimer(now) {
@@ -799,9 +1752,11 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       requestAnimationFrame(gameLoop);
     }
 
-    // UI and input
     menuBtn.addEventListener('click', toggleMenu);
-    f3Btn.addEventListener('click', () => { debugEnabled = !debugEnabled; updateDebug(); });
+    f3Btn.addEventListener('click', () => {
+      debugEnabled = !debugEnabled;
+      updateDebug();
+    });
     sprintBtn.addEventListener('click', () => toggleSprint());
     retryBtn.addEventListener('click', retryGame);
     redeemBtn.addEventListener('click', openRedeem);
@@ -813,18 +1768,42 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
     upMagnetBtn.addEventListener('click', () => buyUpgrade('magnet', 35));
     saveIconsBtn.addEventListener('click', saveIcons);
     resetIconsBtn.addEventListener('click', resetIcons);
-    playerIconInput.addEventListener('change', async () => { const file = playerIconInput.files && playerIconInput.files[0]; if (!file) return; const url = await fileToDataURL(file); customIcons.player = url; playerIconImage = await loadImageFromDataUrl(url); syncIconPreviews(); });
-    botIconInput.addEventListener('change', async () => { const file = botIconInput.files && botIconInput.files[0]; if (!file) return; const url = await fileToDataURL(file); customIcons.bot = url; botIconImage = await loadImageFromDataUrl(url); syncIconPreviews(); });
+
+    playerIconInput.addEventListener('change', async () => {
+      const file = playerIconInput.files && playerIconInput.files[0];
+      if (!file) return;
+      const url = await fileToDataURL(file);
+      customIcons.player = url;
+      playerIconImage = await loadImageFromDataUrl(url);
+      syncIconPreviews();
+    });
+
+    botIconInput.addEventListener('change', async () => {
+      const file = botIconInput.files && botIconInput.files[0];
+      if (!file) return;
+      const url = await fileToDataURL(file);
+      customIcons.bot = url;
+      botIconImage = await loadImageFromDataUrl(url);
+      syncIconPreviews();
+    });
+
     syncIconPreviews();
     refreshUpgradeUI();
 
     document.addEventListener('keydown', e => {
       keys[e.key.toLowerCase()] = true;
-      if (e.key === 'F3') { e.preventDefault(); debugEnabled = !debugEnabled; updateDebug(); }
+      if (e.key === 'F3') {
+        e.preventDefault();
+        debugEnabled = !debugEnabled;
+        updateDebug();
+      }
       if (e.key === 'Shift') toggleSprint(true);
       if (e.key === 'Escape' && redeemOverlay.style.display === 'flex') closeRedeem();
     });
-    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; if (e.key === 'Shift') toggleSprint(false); });
+    document.addEventListener('keyup', e => {
+      keys[e.key.toLowerCase()] = false;
+      if (e.key === 'Shift') toggleSprint(false);
+    });
 
     if (isTouch) {
       joyBase.style.display = 'block';
@@ -836,14 +1815,28 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
         let dy = touch.clientY - cy;
         const max = 45;
         const len = Math.hypot(dx, dy);
-        if (len > max) { dx = dx / len * max; dy = dy / len * max; }
+        if (len > max) {
+          dx = dx / len * max;
+          dy = dy / len * max;
+        }
         joy.x = dx / max;
         joy.y = dy / max;
         joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
       }
-      joyBase.addEventListener('touchstart', e => { joy.active = true; updateJoystickFromTouch(e.touches[0]); }, { passive: true });
-      joyBase.addEventListener('touchmove', e => { if (!joy.active) return; updateJoystickFromTouch(e.touches[0]); }, { passive: true });
-      joyBase.addEventListener('touchend', () => { joy.active = false; joy.x = 0; joy.y = 0; joyStick.style.transform = 'translate(0px, 0px)'; });
+      joyBase.addEventListener('touchstart', e => {
+        joy.active = true;
+        updateJoystickFromTouch(e.touches[0]);
+      }, { passive: true });
+      joyBase.addEventListener('touchmove', e => {
+        if (!joy.active) return;
+        updateJoystickFromTouch(e.touches[0]);
+      }, { passive: true });
+      joyBase.addEventListener('touchend', () => {
+        joy.active = false;
+        joy.x = 0;
+        joy.y = 0;
+        joyStick.style.transform = 'translate(0px, 0px)';
+      });
     }
 
     function loadAllAndStart() {
@@ -857,7 +1850,6 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       });
     }
 
-    // Self-tests / sanity checks
     console.assert(typeof joy === 'object', 'joy state missing');
     console.assert(typeof beginRun === 'function', 'beginRun missing');
     console.assert(typeof updateWorld === 'function', 'updateWorld missing');
