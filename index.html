@@ -725,6 +725,16 @@
       });
     }
 
+    function playPositionalSound(audio, x = 0, y = 0, range = 1200) {
+      try {
+        if (!audio) return;
+        const s = audio.cloneNode(true);
+        s.volume = 0.35;
+        s.currentTime = 0;
+        s.play().catch(() => {});
+      } catch {}
+    }
+
     function normalizeName(s) { return String(s || '').trim().replace(/^\/+/, ''); }
 
     function sizeColor(r) {
@@ -767,6 +777,7 @@
 
     let playerIconImage = null;
     let botIconImage = null;
+    let gemImg = null;
     let shopManifest = { items: [] };
     let selectedShopItem = null;
     let selectedShopFileUrl = null;
@@ -1992,15 +2003,19 @@
     }
 
     function gameLoop(now) {
-      updateFPS(now);
-      if (gameState === 'play') {
-        updateWaveTimer(now);
-        updateCrateTimer(now);
-        updateWorld();
+      try {
+        updateFPS(now);
+        if (gameState === 'play') {
+          updateWaveTimer(now);
+          updateCrateTimer(now);
+          updateWorld();
+        }
+        drawWorld();
+        updateDebug();
+        updateHUD(now);
+      } catch (err) {
+        console.error(err);
       }
-      drawWorld();
-      updateDebug();
-      updateHUD(now);
       requestAnimationFrame(gameLoop);
     }
 
@@ -2155,6 +2170,50 @@
       }, { passive: true });
       joyBase.addEventListener('touchend', releaseJoystick);
       joyBase.addEventListener('touchcancel', releaseJoystick);
+
+      // Backup mobile control: drag anywhere on the game canvas to move.
+      let dragMoveActive = false;
+      let dragPointerId = null;
+      canvas.addEventListener('pointerdown', e => {
+        if (e.pointerType === 'mouse') return;
+        if (gameState !== 'play') return;
+        dragMoveActive = true;
+        dragPointerId = e.pointerId;
+        canvas.setPointerCapture?.(e.pointerId);
+        const rect = canvas.getBoundingClientRect();
+        const dx = (e.clientX - (rect.left + rect.width / 2)) / Math.max(1, rect.width / 2);
+        const dy = (e.clientY - (rect.top + rect.height / 2)) / Math.max(1, rect.height / 2);
+        joy.active = true;
+        joy.x = clamp(dx, -1, 1);
+        joy.y = clamp(dy, -1, 1);
+      }, { passive: true });
+
+      canvas.addEventListener('pointermove', e => {
+        if (!dragMoveActive || e.pointerId !== dragPointerId) return;
+        const rect = canvas.getBoundingClientRect();
+        const dx = e.clientX - (rect.left + rect.width / 2);
+        const dy = e.clientY - (rect.top + rect.height / 2);
+        const max = Math.max(80, Math.min(rect.width, rect.height) * 0.18);
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = Math.max(-1, Math.min(1, (dx / Math.max(1, max))));
+        const ny = Math.max(-1, Math.min(1, (dy / Math.max(1, max))));
+        joy.active = true;
+        joy.x = Math.abs(len) ? nx : 0;
+        joy.y = Math.abs(len) ? ny : 0;
+      }, { passive: true });
+
+      const clearDragMove = e => {
+        if (dragPointerId !== null && e && e.pointerId !== dragPointerId) return;
+        dragMoveActive = false;
+        dragPointerId = null;
+        if (isTouch && !joy.active) {
+          joy.x = 0;
+          joy.y = 0;
+        }
+      };
+      canvas.addEventListener('pointerup', clearDragMove);
+      canvas.addEventListener('pointercancel', clearDragMove);
+      canvas.addEventListener('lostpointercapture', clearDragMove);
     }
 
     function loadAllAndStart() {
@@ -2177,4 +2236,4 @@
   })();
   </script>
 </body>
-              </html>
+  </html>
