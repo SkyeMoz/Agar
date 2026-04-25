@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Circle IO v3</title>
+<title>Circle IO FIXED</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
 body{
@@ -12,7 +12,6 @@ font-family:system-ui;
 color:white;
 }
 
-/* UI */
 #ui{
 position:fixed;
 top:10px;
@@ -39,7 +38,6 @@ width:10%;
 background:#ff8a3d;
 }
 
-/* joystick */
 #joyBase{
 position:fixed;
 bottom:30px;
@@ -60,7 +58,6 @@ background:#ff8a3d;
 border-radius:50%;
 }
 
-/* canvas */
 canvas{display:block;}
 </style>
 </head>
@@ -68,9 +65,8 @@ canvas{display:block;}
 <body>
 
 <div id="ui">
-<b>Circle IO</b><br>
-Size: <span id="size">10</span><br>
-
+<b>Circle IO FIXED</b><br>
+Size: <span id="size">10</span>
 <div id="bar"><div id="fill"></div></div>
 </div>
 
@@ -88,7 +84,11 @@ canvas.width=innerWidth;
 canvas.height=innerHeight;
 
 /* CAMERA */
-let cam={x:0,y:0,zoom:1};
+let cam={
+x:0,
+y:0,
+zoom:1
+};
 
 /* PLAYER */
 let player={
@@ -101,8 +101,8 @@ for(let i=0;i<200;i++) spawnFood();
 
 function spawnFood(){
 food.push({
-x:(Math.random()-0.5)*4000,
-y:(Math.random()-0.5)*4000,
+x:(Math.random()-0.5)*5000,
+y:(Math.random()-0.5)*5000,
 r:Math.random()*4+2,
 color:`hsl(${Math.random()*360},80%,60%)`
 });
@@ -114,11 +114,11 @@ for(let i=0;i<25;i++) spawnBot();
 
 function spawnBot(){
 bots.push({
-x:(Math.random()-0.5)*4000,
-y:(Math.random()-0.5)*4000,
+x:(Math.random()-0.5)*5000,
+y:(Math.random()-0.5)*5000,
 
-/* 🔥 FIXED SIZE RANGE */
-r:Math.random()*999999999+1,
+/* random 1 - big insane */
+r:Math.random()*200+5,
 
 vx:0,vy:0
 });
@@ -175,25 +175,25 @@ player.y+=joy.y*player.speed*2;
 }
 }
 
-/* BOT AI (FIXED LOGIC) */
+/* 🤖 FIXED AI (CORRECT LOGIC) */
 function botAI(b){
 
 let dx=player.x-b.x;
 let dy=player.y-b.y;
-let dist=Math.sqrt(dx*dx+dy*dy)+0.01;
+let dist=Math.sqrt(dx*dx+dy*dy)+0.001;
 
-/* 🔥 NEW RULE */
-if(b.r < player.r){
-/* smaller → RUN AWAY */
-b.vx -= dx/dist*0.6;
-b.vy -= dy/dist*0.6;
+/* ✅ FIXED RULES */
+if(b.r > player.r){
+/* BIGGER BOT → RUN AWAY */
+b.vx -= dx/dist*0.5;
+b.vy -= dy/dist*0.5;
 }else{
-/* bigger → CHASE */
+/* SMALLER BOT → CHASE PLAYER */
 b.vx += dx/dist*0.4;
 b.vy += dy/dist*0.4;
 }
 
-/* smooth */
+/* smooth movement */
 b.vx*=0.92;
 b.vy*=0.92;
 
@@ -201,10 +201,10 @@ b.x+=b.vx;
 b.y+=b.vy;
 }
 
-/* COLLISIONS */
+/* COLLISION */
 function collide(){
 
-/* FOOD */
+/* food */
 for(let i=0;i<food.length;i++){
 let f=food[i];
 let dx=player.x-f.x;
@@ -212,13 +212,13 @@ let dy=player.y-f.y;
 let d=Math.sqrt(dx*dx+dy*dy);
 
 if(d<player.r){
-player.r+=0.3;
+player.r+=0.25;
 food.splice(i,1);
 spawnFood();
 }
 }
 
-/* BOTS */
+/* bots */
 for(let i=0;i<bots.length;i++){
 let b=bots[i];
 
@@ -226,7 +226,7 @@ let dx=player.x-b.x;
 let dy=player.y-b.y;
 let d=Math.sqrt(dx*dx+dy*dy);
 
-/* eat */
+/* eat smaller */
 if(d<player.r && player.r>b.r){
 player.r+=b.r*0.05;
 bots.splice(i,1);
@@ -240,43 +240,60 @@ reset();
 }
 }
 
-/* RESET */
 function reset(){
 player.x=0;
 player.y=0;
 player.r=10;
 }
 
-/* GRID */
+/* 🧭 GRID */
 function drawGrid(){
-ctx.strokeStyle="rgba(255,255,255,0.03)";
-for(let i=-2000;i<2000;i+=100){
-ctx.beginPath();
-ctx.moveTo(i-cam.x+canvas.width/2,-2000-cam.y+canvas.height/2);
-ctx.lineTo(i-cam.x+canvas.width/2,2000-cam.y+canvas.height/2);
-ctx.stroke();
+let step=100;
 
+ctx.strokeStyle="rgba(255,255,255,0.04)";
+ctx.lineWidth=1;
+
+/* camera-based grid */
+let startX=Math.floor((cam.x-2000)/step)*step;
+let endX=cam.x+2000;
+
+let startY=Math.floor((cam.y-2000)/step)*step;
+let endY=cam.y+2000;
+
+/* vertical */
+for(let x=startX;x<endX;x+=step){
 ctx.beginPath();
-ctx.moveTo(-2000-cam.x+canvas.width/2,i-cam.y+canvas.height/2);
-ctx.lineTo(2000-cam.x+canvas.width/2,i-cam.y+canvas.height/2);
+ctx.moveTo(x-cam.x+canvas.width/2, -2000);
+ctx.lineTo(x-cam.x+canvas.width/2, 2000);
+ctx.stroke();
+}
+
+/* horizontal */
+for(let y=startY;y<endY;y+=step){
+ctx.beginPath();
+ctx.moveTo(-2000, y-cam.y+canvas.height/2);
+ctx.lineTo(2000, y-cam.y+canvas.height/2);
 ctx.stroke();
 }
 }
 
 /* DRAW */
 function draw(){
-
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-/* CAMERA FOLLOW */
-cam.x+=(player.x-cam.x)*0.08;
-cam.y+=(player.y-cam.y)*0.08;
+/* smooth camera follow */
+cam.x += (player.x - cam.x)*0.08;
+cam.y += (player.y - cam.y)*0.08;
 
-/* ZOOM WHEN BIG */
-cam.zoom = Math.max(0.4, Math.min(1, 20/player.r));
+/* 📷 FIXED ZOOM (REAL IO STYLE) */
+cam.zoom = Math.max(0.35, Math.min(1.2, 20/player.r));
 
 ctx.save();
+
+/* apply zoom + center */
+ctx.translate(canvas.width/2,canvas.height/2);
 ctx.scale(cam.zoom,cam.zoom);
+ctx.translate(-cam.x,-cam.y);
 
 /* GRID */
 drawGrid();
@@ -284,9 +301,7 @@ drawGrid();
 /* FOOD */
 for(let f of food){
 ctx.beginPath();
-ctx.arc(f.x-cam.x+canvas.width/(2*cam.zoom),
-        f.y-cam.y+canvas.height/(2*cam.zoom),
-        f.r,0,Math.PI*2);
+ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
 ctx.fillStyle=f.color;
 ctx.fill();
 }
@@ -296,19 +311,16 @@ for(let b of bots){
 botAI(b);
 
 ctx.beginPath();
-ctx.arc(b.x-cam.x+canvas.width/(2*cam.zoom),
-        b.y-cam.y+canvas.height/(2*cam.zoom),
-        b.r,0,Math.PI*2);
+ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
 
+/* color logic */
 ctx.fillStyle=b.r>player.r?"red":"lime";
 ctx.fill();
 }
 
 /* PLAYER */
 ctx.beginPath();
-ctx.arc(canvas.width/(2*cam.zoom),
-        canvas.height/(2*cam.zoom),
-        player.r,0,Math.PI*2);
+ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
 ctx.fillStyle="white";
 ctx.fill();
 
