@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Circle Growth Test Mode</title>
+<title>Circle IO Upgrade</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
 body{
@@ -12,158 +12,283 @@ font-family:system-ui;
 color:white;
 }
 
+/* UI */
 #ui{
 position:fixed;
 top:10px;
 left:10px;
 z-index:10;
-background:rgba(255,255,255,0.05);
+background:rgba(255,255,255,0.06);
 padding:10px;
 border-radius:12px;
 backdrop-filter:blur(10px);
 }
 
-button{
+#bar{
+width:200px;
+height:10px;
+background:#222;
+border-radius:10px;
+overflow:hidden;
 margin-top:5px;
-padding:6px 10px;
-border:none;
-border-radius:8px;
-background:#ff8a3d;
-cursor:pointer;
 }
 
+#fill{
+height:100%;
+width:10%;
+background:#ff8a3d;
+}
+
+/* joystick */
+#joyBase{
+position:fixed;
+bottom:30px;
+left:30px;
+width:100px;
+height:100px;
+background:rgba(255,255,255,0.05);
+border-radius:50%;
+touch-action:none;
+}
+
+#joyStick{
+position:absolute;
+top:35px;
+left:35px;
+width:30px;
+height:30px;
+background:#ff8a3d;
+border-radius:50%;
+}
+
+/* canvas */
 canvas{display:block;}
 </style>
 </head>
 <body>
 
 <div id="ui">
-<b>Circle Test Mode</b><br>
+<b>Circle IO</b><br>
 Size: <span id="size">10</span><br>
-Coins: <span id="coins">0</span><br>
-<button onclick="sell()">Sell Size</button>
+Coins: <span id="coins">0</span>
+
+<div id="bar"><div id="fill"></div></div>
+</div>
+
+<div id="joyBase">
+<div id="joyStick"></div>
 </div>
 
 <canvas id="game"></canvas>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width=innerWidth;
+canvas.height=innerHeight;
 
-let player = {
-x: canvas.width/2,
-y: canvas.height/2,
-r: 10,
-speed: 3
+/* CAMERA */
+let cam={x:0,y:0};
+
+/* PLAYER */
+let player={
+x:0,y:0,r:10,speed:3
 };
 
-let coins = 0;
+let coins=0;
 
-let foods = [];
+/* FOOD */
+let food=[];
+for(let i=0;i<150;i++) spawnFood();
 
 function spawnFood(){
-foods.push({
-x: Math.random()*canvas.width,
-y: Math.random()*canvas.height,
-r: Math.random()*4+2,
-color: `hsl(${Math.random()*360},80%,60%)`
+food.push({
+x:(Math.random()-0.5)*3000,
+y:(Math.random()-0.5)*3000,
+r:Math.random()*4+2,
+color:`hsl(${Math.random()*360},80%,60%)`
 });
 }
 
-for(let i=0;i<80;i++) spawnFood();
+/* BOTS */
+let bots=[];
+for(let i=0;i<20;i++) spawnBot();
 
-let keys = {};
-
-document.addEventListener("keydown",(e)=>keys[e.key.toLowerCase()]=true);
-document.addEventListener("keyup",(e)=>keys[e.key.toLowerCase()]=false);
-
-// MOBILE JOYSTICK SIMPLE
-let touch=false;
-let tx=0,ty=0;
-
-canvas.addEventListener("touchstart",e=>{
-touch=true;
+function spawnBot(){
+bots.push({
+x:(Math.random()-0.5)*3000,
+y:(Math.random()-0.5)*3000,
+r:Math.random()*20+5,
+vx:0,vy:0
 });
-canvas.addEventListener("touchmove",e=>{
+}
+
+/* INPUT */
+let keys={};
+
+document.addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
+document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+
+/* JOYSTICK */
+let joy={x:0,y:0,active:false};
+
+const stick=document.getElementById("joyStick");
+const base=document.getElementById("joyBase");
+
+base.addEventListener("touchstart",e=>{
+joy.active=true;
+});
+
+base.addEventListener("touchmove",e=>{
 let t=e.touches[0];
-tx=(t.clientX-player.x)/50;
-ty=(t.clientY-player.y)/50;
-});
-canvas.addEventListener("touchend",()=>touch=false);
+let rect=base.getBoundingClientRect();
 
+let dx=t.clientX-(rect.left+50);
+let dy=t.clientY-(rect.top+50);
+
+let len=Math.sqrt(dx*dx+dy*dy);
+if(len>40){
+dx=dx/len*40;
+dy=dy/len*40;
+}
+
+joy.x=dx/40;
+joy.y=dy/40;
+
+stick.style.transform=`translate(${dx}px,${dy}px)`;
+});
+
+base.addEventListener("touchend",()=>{
+joy.active=false;
+joy.x=0;joy.y=0;
+stick.style.transform=`translate(0px,0px)`;
+});
+
+/* MOVE */
 function move(){
 if(keys["w"]) player.y-=player.speed;
 if(keys["s"]) player.y+=player.speed;
 if(keys["a"]) player.x-=player.speed;
 if(keys["d"]) player.x+=player.speed;
 
-if(touch){
-player.x+=tx;
-player.y+=ty;
+if(joy.active){
+player.x+=joy.x*player.speed*2;
+player.y+=joy.y*player.speed*2;
+}
 }
 
-// bounds
-player.x=Math.max(0,Math.min(canvas.width,player.x));
-player.y=Math.max(0,Math.min(canvas.height,player.y));
-}
-
-function drawPlayer(){
-let color="white";
-
-if(player.r>100) color="red";
-else if(player.r>30) color="orange";
-else if(player.r>15) color="yellow";
-else color="white";
-
-ctx.beginPath();
-ctx.arc(player.x,player.y,player.r,0,Math.PI*2);
-ctx.fillStyle=color;
-ctx.fill();
-
-ctx.fillStyle="white";
-ctx.font="12px system-ui";
-ctx.fillText(Math.floor(player.r),player.x-10,player.y-15);
-}
-
-function drawFood(){
-for(let i=0;i<foods.length;i++){
-let f=foods[i];
-
-ctx.beginPath();
-ctx.arc(f.x,f.y,f.r,0,Math.PI*2);
-ctx.fillStyle=f.color;
-ctx.fill();
-
-// collision
-let dx=player.x-f.x;
-let dy=player.y-f.y;
+/* BOT AI */
+function botAI(b){
+let dx=player.x-b.x;
+let dy=player.y-b.y;
 let dist=Math.sqrt(dx*dx+dy*dy);
 
-if(dist<player.r){
-player.r+=0.3;
-foods.splice(i,1);
+if(b.r>player.r){
+b.vx-=dx/dist*0.2;
+b.vy-=dy/dist*0.2;
+}else{
+b.vx+=dx/dist*0.1;
+b.vy+=dy/dist*0.1;
+}
+
+/* drift */
+b.vx*=0.95;
+b.vy*=0.95;
+
+b.x+=b.vx;
+b.y+=b.vy;
+}
+
+/* COLLISIONS */
+function collide(){
+/* food */
+for(let i=0;i<food.length;i++){
+let f=food[i];
+let dx=player.x-f.x;
+let dy=player.y-f.y;
+let d=Math.sqrt(dx*dx+dy*dy);
+
+if(d<player.r){
+player.r+=0.25;
+food.splice(i,1);
 spawnFood();
 }
 }
+
+/* bots */
+for(let i=0;i<bots.length;i++){
+let b=bots[i];
+let dx=player.x-b.x;
+let dy=player.y-b.y;
+let d=Math.sqrt(dx*dx+dy*dy);
+
+/* eat bot */
+if(d<player.r && player.r>b.r){
+player.r+=b.r*0.3;
+bots.splice(i,1);
+spawnBot();
 }
 
-function sell(){
-coins+=Math.floor(player.r);
+/* DIE */
+if(d<player.r && b.r>player.r){
+resetGame();
+}
+}
+}
+
+/* RESET */
+function resetGame(){
+player.x=0;
+player.y=0;
 player.r=10;
-document.getElementById("coins").innerText=coins;
 }
 
-function loop(){
+/* DRAW */
+function draw(){
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-move();
-drawFood();
-drawPlayer();
+/* camera follow */
+cam.x+=(player.x-cam.x)*0.08;
+cam.y+=(player.y-cam.y)*0.08;
 
+/* FOOD */
+for(let f of food){
+ctx.beginPath();
+ctx.arc(f.x-cam.x+canvas.width/2,f.y-cam.y+canvas.height/2,f.r,0,Math.PI*2);
+ctx.fillStyle=f.color;
+ctx.fill();
+}
+
+/* BOTS */
+for(let b of bots){
+botAI(b);
+
+ctx.beginPath();
+ctx.arc(b.x-cam.x+canvas.width/2,b.y-cam.y+canvas.height/2,b.r,0,Math.PI*2);
+ctx.fillStyle=b.r>player.r?"red":"lime";
+ctx.fill();
+}
+
+/* PLAYER */
+ctx.beginPath();
+ctx.arc(canvas.width/2,canvas.height/2,player.r,0,Math.PI*2);
+ctx.fillStyle="white";
+ctx.fill();
+}
+
+/* LOOP */
+function loop(){
+move();
+collide();
+draw();
+
+/* UI */
 document.getElementById("size").innerText=Math.floor(player.r);
+document.getElementById("coins").innerText=Math.floor(player.r);
+
+/* XP BAR */
+document.getElementById("fill").style.width=Math.min(player.r*2,100)+"%";
 
 requestAnimationFrame(loop);
 }
