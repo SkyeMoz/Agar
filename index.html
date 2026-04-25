@@ -197,6 +197,9 @@
     const SHOP_MANIFEST_URL = 'shop/manifest.json';
     const SHOP_BASE_URL = 'shop/';
     const WORLD = { chunkSize: 700, loadRadius: 3, keepRadius: 5 };
+    const BOT_NAMES = [
+      'Alpha','Bravo','Cobra','Delta','Echo','Falcon','Ghost','Hunter','Ion','Jinx','Knight','Luna','Nova','Orion','Pixel','Quark','Raven','Sting','Titan','Umbra','Viper','Wolf','Zephyr','Aster','Blaze','Comet','Drift','Ember','Frost','Glint','Haze','Indigo','Jade','Kilo','Lumen','Mira','Nox','Onyx','Prism','Quest','Rift','Solar','Talon','Ultra','Vector','Wisp','Xeno','Yara','Zion','Amber','Beryl','Chrome','Dusk','Eon','Flux','Glory','Halo','Iris','Jolt','Karma','Lyric'
+    ];
     const DEFAULT_ICON_STATE = { player: null, bot: null };
     const DEFAULT_UPGRADES = { starterSize: 0, speed: 0, magnet: 0 };
 
@@ -363,6 +366,8 @@
     function beginLoading(text, done) {
       loadingText.textContent = text || 'Preparing the world.';
       loadingOverlay.style.display = 'flex';
+      gameOverOverlay.style.display = 'none';
+      redeemOverlay.style.display = 'none';
       gameState = 'loading';
       setTimeout(() => {
         try { if (typeof done === 'function') done(); } catch (err) { console.error(err); }
@@ -423,7 +428,24 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
         arr.push(food);
         foods.push(food);
       }
-      if (Math.random() < crateChance) { const crate = { x: cx * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35), y: cy * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35), r: 10, chunkX: cx, chunkY: cy, chunkKey: key, kind: 'crate', power: pickRandomPower() }; arr.push(crate); foods.push(crate); spawnCrateNotice(crate.x, crate.y); }
+      if (Math.random() < crateChance) {
+        const centerX = cx * WORLD.chunkSize + WORLD.chunkSize / 2;
+        const centerY = cy * WORLD.chunkSize + WORLD.chunkSize / 2;
+        const crate = {
+          x: clamp(centerX + rand(-180, 180), cx * WORLD.chunkSize + 30, (cx + 1) * WORLD.chunkSize - 30),
+          y: clamp(centerY + rand(-180, 180), cy * WORLD.chunkSize + 30, (cy + 1) * WORLD.chunkSize - 30),
+          r: 10,
+          chunkX: cx,
+          chunkY: cy,
+          chunkKey: key,
+          kind: 'crate',
+          power: pickRandomPower(),
+          nearAnnounced: false
+        };
+        arr.push(crate);
+        foods.push(crate);
+        spawnCrateNotice(crate.x, crate.y);
+      }
       const gemCount = Math.random() < gemChance ? 1 + (Math.random() < 0.5 ? 1 : 0) : 0;
       for (let g = 0; g < gemCount; g++) { const gem = { x: cx * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35), y: cy * WORLD.chunkSize + rand(35, WORLD.chunkSize - 35), r: 9, chunkX: cx, chunkY: cy, chunkKey: key, kind: 'gem' }; arr.push(gem); foods.push(gem); }
       chunkFoods.set(key, arr);
@@ -452,7 +474,7 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       let r = forceSize != null ? forceSize : (isBig ? player.r * rand(1.05, 1.35) * sizeScale : rand(2, 45));
       r = clamp(r, 1, Math.max(400, player.r * 3.2));
       const pos = forcePos || { x: player.x + Math.cos(angle) * radius, y: player.y + Math.sin(angle) * radius };
-      bots.push({ x: pos.x, y: pos.y, r, vx: 0, vy: 0, scale: 1, alpha: 1, dying: false, personality, moodTime: Math.floor(rand(30, 110)), mood: 'wander', target: null, wanderX: player.x + rand(-1000, 1000), wanderY: player.y + rand(-1000, 1000), baseSpeed: rand(0.55, 1.25), speedJitter: rand(0.85, 1.15), sizeFactor: clamp(18 / (r + 6), 0.14, 1.0) });
+      bots.push({ x: pos.x, y: pos.y, r, vx: 0, vy: 0, scale: 1, alpha: 1, dying: false, personality, name: BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)], moodTime: Math.floor(rand(30, 110)), mood: 'wander', target: null, wanderX: player.x + rand(-1000, 1000), wanderY: player.y + rand(-1000, 1000), baseSpeed: rand(0.55, 1.25), speedJitter: rand(0.85, 1.15), sizeFactor: clamp(18 / (r + 6), 0.14, 1.0) });
     }
     function maintainBots() { while (bots.length < targetBotCount) spawnBot(); }
     function spawnRaidWave() {
@@ -547,6 +569,13 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
           if (f.y <= minY + f.r) { f.y = minY + f.r; f.vy *= -1; }
           if (f.y >= maxY - f.r) { f.y = maxY - f.r; f.vy *= -1; }
         }
+        if (f.kind === 'crate' && !f.nearAnnounced) {
+          const crateDist = dist(player.x, player.y, f.x, f.y);
+          if (crateDist < 900) {
+            f.nearAnnounced = true;
+            toast(`Crate nearby: ${Math.floor(crateDist)}px`, 'blue', 1800);
+          }
+        }
         if (f.kind === 'gem') {
           const dMag = dist(player.x, player.y, f.x, f.y);
           if (dMag < magnetRadius) {
@@ -582,7 +611,7 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
       for (const bot of bots) {
         if (bot.dying) { bot.scale *= 0.88; bot.alpha *= 0.92; continue; }
         chooseBotAction(bot);
-        const botSpeed = clamp((1.15 * bot.baseSpeed * bot.speedJitter * bot.sizeFactor) / Math.sqrt(bot.r / 10), 0.08, 0.88);
+        const botSpeed = clamp((1.55 * bot.baseSpeed * bot.speedJitter * bot.sizeFactor) / Math.sqrt(bot.r / 10), 0.16, 1.45);
         if (bot.mood === 'flee-player') steerAway(bot, player.x, player.y, 0.12 * botSpeed);
         else if (bot.mood === 'hunt-player') steerToward(bot, player.x, player.y, 0.1 * botSpeed);
         else if (bot.mood === 'flee-bot' && bot.target) steerAway(bot, bot.target.x, bot.target.y, 0.11 * botSpeed);
@@ -600,10 +629,10 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
         for (let j = i + 1; j < bots.length; j++) {
           const b = bots[j]; if (b.dying) continue;
           const d = dist(a.x, a.y, b.x, b.y), minD = a.r + b.r;
-          if (d < minD * 0.9) {
+          if (d < minD * 0.98) {
             const larger = a.r >= b.r ? a : b;
             const smaller = a.r >= b.r ? b : a;
-            if (larger.r > smaller.r * 1.08) {
+            if (larger.r > smaller.r * 1.01) {
               smaller.dying = true;
               larger.r += smaller.r * 0.06;
               playPositionalSound(killSound, smaller.x, smaller.y, 1800);
@@ -642,6 +671,7 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
           updateBotTargetCount();
           toast(`Kill Stats +1 | Total ${killCount}`, 'good', 1100);
         } else if (bot.r > player.r) {
+          playPositionalSound(killSound, bot.x, bot.y, 1800);
           gameState = 'dead';
           gameOverText.textContent = `Level ${level} • Money ${Math.floor(money)} saved`;
           gameOverOverlay.style.display = 'flex';
@@ -681,7 +711,15 @@ Downloading now...`; downloadFile(selectedShopFileUrl || `${SHOP_BASE_URL}${item
         ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fillStyle = f.color; ctx.fill();
       }
     }
-    function drawBots() { for (const bot of bots) { ctx.save(); ctx.globalAlpha = bot.alpha; const c = bot.r > player.r ? '#ff5e5e' : '#58ff72'; drawCircle(bot.x, bot.y, bot.r * bot.scale, c, botIconImage); ctx.restore(); ctx.save(); ctx.fillStyle = c; ctx.font = `${Math.max(10, Math.min(18, bot.r * 0.18))}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.floor(bot.r), bot.x, bot.y - bot.r * 0.55); ctx.restore(); if (debugEnabled) { ctx.save(); ctx.strokeStyle = c; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(bot.x, bot.y); ctx.stroke(); ctx.restore(); } } }
+    function drawBots() { for (const bot of bots) { ctx.save(); ctx.globalAlpha = bot.alpha; const c = bot.r > player.r ? '#ff5e5e' : '#58ff72'; drawCircle(bot.x, bot.y, bot.r * bot.scale, c, botIconImage);
+        ctx.save();
+        ctx.fillStyle = bot.r > player.r ? 'rgba(255,80,80,.95)' : 'rgba(84,255,112,.95)';
+        ctx.font = `${Math.max(9, Math.min(18, bot.r * 0.12))}px system-ui`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const label = bot.name || 'BOT';
+        ctx.fillText(label, bot.x, bot.y);
+        ctx.restore(); ctx.restore(); ctx.save(); ctx.fillStyle = c; ctx.font = `${Math.max(10, Math.min(18, bot.r * 0.18))}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.floor(bot.r), bot.x, bot.y - bot.r * 0.55); ctx.restore(); if (debugEnabled) { ctx.save(); ctx.strokeStyle = c; ctx.globalAlpha = 0.8; ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(bot.x, bot.y); ctx.stroke(); ctx.restore(); } } }
     function drawPlayer() { drawCircle(player.x, player.y, player.r, player.shieldTime > 0 ? '#a7e7ff' : '#ffffff', playerIconImage); if (player.shieldTime > 0) { ctx.save(); ctx.strokeStyle = 'rgba(98,185,255,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(player.x, player.y, player.r + 12, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); } ctx.fillStyle = '#ffffff'; ctx.font = `${Math.max(12, Math.min(28, player.r * 0.34))}px system-ui`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.floor(player.r), player.x, player.y - player.r - 16); }
     function drawEffects() { for (const e of effects) { if (e.ring) { ctx.save(); ctx.globalAlpha = clamp(e.life / 16, 0, 1); ctx.beginPath(); ctx.arc(e.x, e.y, e.maxR * (1 - e.life / 16), 0, Math.PI * 2); ctx.strokeStyle = e.color; ctx.lineWidth = 2; ctx.stroke(); ctx.restore(); } else if (e.explode) { ctx.save(); ctx.globalAlpha = clamp(e.life / 8, 0, 1); ctx.beginPath(); ctx.arc(e.x, e.y, e.r + (8 - e.life) * 0.3, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.restore(); ctx.save(); ctx.fillStyle = '#000'; ctx.font = 'bold 14px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(Math.max(0, Math.ceil(e.life / 60)), e.x, e.y); ctx.restore(); } else { ctx.save(); ctx.globalAlpha = clamp(e.life / 28, 0, 1); ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fillStyle = e.color; ctx.fill(); ctx.restore(); } } for (const l of espLines) { ctx.save(); ctx.globalAlpha = clamp(l.life / 240, 0, 1); ctx.strokeStyle = l.color; ctx.setLineDash([10, 8]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(l.x1, l.y1); ctx.lineTo(l.x2, l.y2); ctx.stroke(); ctx.restore(); } }
     function drawWorld() { ctx.clearRect(0, 0, canvas.width, canvas.height); cam.x += (player.x - cam.x) * 0.08; cam.y += (player.y - cam.y) * 0.08; const targetZoom = clamp(1.35 - Math.log10(player.r + 1) * 0.22, 0.04, 1.35); cam.zoom += (targetZoom - cam.zoom) * 0.08; ctx.save(); ctx.translate(canvas.width / 2, canvas.height / 2); ctx.scale(cam.zoom, cam.zoom); ctx.translate(-cam.x, -cam.y); drawGrid(); drawFoods(); drawBots(); drawEffects(); drawPlayer(); ctx.restore(); }
