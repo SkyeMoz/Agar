@@ -1073,6 +1073,7 @@
       <div class="row">
         <button id="pauseResumeBtn" type="button">Resume</button>
         <button id="pauseResetBtn" type="button" class="ghost">Retry</button>
+        <button id="resetSaveBtn" type="button" class="ghost">Reset Save</button>
       </div>
       <div class="row" style="margin-top:10px;">
         <button id="pauseRedeemBtn" type="button" class="buyGood">Redemption</button>
@@ -1660,7 +1661,7 @@
     };
     let cam = { x: 0, y: 0, zoom: 1 };
     let gameState = 'loading';
-    let debugEnabled = false;
+    let debugEnabled = localStorage.getItem('circleio_debug_v1') === '1';
     let level = 1;
     let levelStart = 10;
     let nextLevel = 24;
@@ -1929,7 +1930,8 @@
       return settingsState;
     }
 
-    function saveSettings() {
+    let saveSettingsTimer = null;
+    function saveSettings(silent = false) {
       settingsState = {
         volumes: {
           master: Number(masterVolume.value || 100),
@@ -1967,7 +1969,7 @@
       saveJson(SETTINGS_KEY, settingsState);
       applySettings();
       syncGameplayControls();
-      toast('Settings saved', 'good', 1400);
+      if (!silent) toast('Settings saved', 'good', 1400);
     }
 
     function syncSettingsUI() {
@@ -2004,7 +2006,10 @@
     }
 
     function bindSettingsLiveControls() {
-      const liveSave = () => saveSettings();
+      const liveSave = () => {
+        clearTimeout(saveSettingsTimer);
+        saveSettingsTimer = setTimeout(() => saveSettings(true), 180);
+      };
       [masterVolume, eatVolume, killVolume, buyVolume, errorVolume, clickVolume, powerVolume, raidVolume, upgradeVolume, chunkRadiusInput, nameColorInput, nameSizeInput].forEach(el => {
         if (!el) return;
         el.addEventListener('input', liveSave);
@@ -2022,7 +2027,7 @@
       ui.classList.toggle('hiddenHud', !visible);
       uiBody.style.display = visible ? '' : 'none';
       playerNameInput.style.display = visible ? '' : 'none';
-      if (moneyMiniHud) moneyMiniHud.style.display = (gameState === 'play' && t.showMoneyHud !== false && visible) ? 'block' : 'none';
+      if (moneyMiniHud) moneyMiniHud.style.display = (t.showMoneyHud !== false) ? 'block' : 'none';
       if (fpsHud) fpsHud.style.display = (gameState === 'play' && t.showFps === true) ? 'block' : 'none';
       if (zoomControls) zoomControls.style.display = (gameState === 'play' && t.showZoomControls !== false) ? 'flex' : 'none';
       if (hudStack) hudStack.style.display = (gameState === 'play' && (t.showZoomControls !== false || t.showFuelButton !== false)) ? 'flex' : 'none';
@@ -3005,6 +3010,7 @@ Effect: ${effectName}${duration ? ` (${duration}s)` : ''}` : ''}`;
         dropletCount -= dropletNeed;
         level++;
         profileLevel = Math.max(profileLevel, level);
+        localStorage.setItem('circleio_level_v1', String(level));
         dropletNeed = Math.max(500, Math.floor(dropletNeed * 2));
         nextLevel = Math.max(nextLevel, player.r + 10);
         saveStats();
@@ -3258,6 +3264,7 @@ Effect: ${effectName}${duration ? ` (${duration}s)` : ''}` : ''}`;
       ctx.font = `900 ${Math.max(14, Math.min(48, player.r * 0.42)) * getNameSizeScale()}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.fillText(playerName || 'Player', player.x, nameY);
       ctx.fillText(Math.floor(player.r), player.x, sizeY);
     }
 
@@ -3453,6 +3460,8 @@ Effect: ${effectName}${duration ? ` (${duration}s)` : ''}` : ''}`;
       localStorage.removeItem(PROFILE_LEVEL_KEY);
       localStorage.removeItem(STATS_KEY);
       localStorage.removeItem('circleio_daily_reward_v1');
+      localStorage.removeItem('circleio_level_v1');
+      localStorage.removeItem('circleio_debug_v1');
       localStorage.removeItem('circleio_active_cheat_effects_v1');
       money = 0;
       upgrades = { ...DEFAULT_UPGRADES };
@@ -3741,7 +3750,7 @@ Next reward: ${next.label} (+${next.coins} coins)`;
 
     hideBtn.addEventListener('click', toggleHudVisibility);
     pauseBtn.addEventListener('click', togglePause);
-    f3Btn.addEventListener('click', () => { try { debugEnabled = !debugEnabled; updateDebug(); syncGameplayControls(); } catch (err) { console.error(err); } });
+    f3Btn.addEventListener('click', () => { try { debugEnabled = !debugEnabled; localStorage.setItem('circleio_debug_v1', debugEnabled ? '1' : '0'); updateDebug(); syncGameplayControls(); } catch (err) { console.error(err); } });
     sprintBtn.addEventListener('click', () => toggleSprint());
     if (speedModeBtn) speedModeBtn.addEventListener('click', toggleSpeedMode);
     if (killBtn) killBtn.addEventListener('click', openDeathMenu);
@@ -3755,6 +3764,7 @@ Next reward: ${next.label} (+${next.coins} coins)`;
     pauseSettingsBtn.addEventListener('click', openSettings);
     if (pauseSettingsBtn2) pauseSettingsBtn2.addEventListener('click', openSettings);
     if (pauseCloseBtn) pauseCloseBtn.addEventListener('click', closePause);
+    if (resetSaveBtn) resetSaveBtn.addEventListener('click', () => { resetAllSaveData(); retryGame(); });
     if (statsCloseBtn) statsCloseBtn.addEventListener('click', closeStats);
     pauseStatsBtn.addEventListener('click', openStats);
     closeRedeemBtn.addEventListener('click', closeRedeem);
@@ -3897,6 +3907,7 @@ Next reward: ${next.label} (+${next.coins} coins)`;
       if (e.key === 'F3') {
         e.preventDefault();
         debugEnabled = !debugEnabled;
+        localStorage.setItem('circleio_debug_v1', debugEnabled ? '1' : '0');
         updateDebug();
       }
       if (e.key === 'Shift') toggleSprint(true);
@@ -4082,4 +4093,4 @@ Next reward: ${next.label} (+${next.coins} coins)`;
   })();
   </script>
 </body>
-   </html>
+  </html>
